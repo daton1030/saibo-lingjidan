@@ -906,30 +906,30 @@
     }
 
     const DEFAULT_CARDS = [
-      { id: "modelscope", name: "魔搭社区", vendor: "ModelScope", icon: "modelscope", quotaText: "尚未读取", unit: "魔粒", balance: null, tokens: null, value: 0, status: "no_activity", account: "未连接扩展", accountNote: "在扩展选项页保存你自己的魔搭访问令牌后，可读取官方魔粒余额。令牌只存在本机，不会进入本页面。", intro: "阿里云模型社区，汇集开源与托管模型。魔粒可用于 API-Inference 等能力。官方按调用次数扣减魔粒；每日额度在登录官方网站时自动到账，没有签到接口。", reward: 0, checkinSupported: false, livePlatform: true },
-      { id: "meeo", name: "Meeo", vendor: "Meeo", icon: "meeo", quotaText: "8600 积分", unit: "积分", balance: 8600, tokens: 7800000, value: 18, status: "claimable", account: "已连接", accountNote: "演示账户", intro: "面向创作与日常对话的模型额度服务，可用积分兑换调用次数。", reward: 2000 },
-      { id: "tongyi", name: "通义灵码", vendor: "阿里云", icon: "tongyi", quotaText: "320 积分", unit: "积分", balance: 320, tokens: 3600000, value: 9, status: "fail_demo", account: "已连接", accountNote: "演示账户 · 此卡用于展示领取失败提示", intro: "阿里云推出的智能编码助手，可在 IDE 中完成补全、修改与问答。", reward: 80 },
-      { id: "officeace", name: "OfficeAce", vendor: "OfficeAce", icon: "officeace", quotaText: "430 积分", unit: "积分", balance: 430, tokens: 1400000, value: 3, status: "claimed", account: "已连接", accountNote: "演示账户", intro: "面向办公场景的 AI 助手，可用积分兑换模型额度。", reward: 0, claimedReward: 100 },
-      { id: "doubao", name: "豆包", vendor: "字节跳动", icon: "doubao", quotaText: "200 额度", unit: "额度", balance: 200, tokens: 1500000, value: 15, status: "official", account: "示例账户", accountNote: "演示数据，未接入官方接口", intro: "字节跳动的大模型助手，提供对话、创作与开放平台能力。", reward: 0 },
-      { id: "huawei", name: "华为云", vendor: "CodeArts / 盘古", icon: "huawei", quotaText: "200 积分", unit: "积分", balance: 200, tokens: 1200000, value: 12, status: "official", account: "示例账户", accountNote: "演示数据", intro: "华为云盘古与 CodeArts 相关的模型与编程助手额度。", reward: 0 },
-      { id: "minimax", name: "MiniMax", vendor: "MiniMax", icon: "minimax", quotaText: "400 积分", unit: "积分", balance: 400, tokens: 2000000, value: 20, status: "official", account: "示例账户", accountNote: "演示数据", intro: "MiniMax 开放平台与海螺产品的模型积分。", reward: 0 },
-      { id: "qoder", name: "Qoder", vendor: "Qoder", icon: "qoder", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 800000, value: 8, status: "official", account: "示例账户", accountNote: "演示数据", intro: "面向开发者的编程智能体，提供每日免费额度。", reward: 0 },
-      { id: "trae", name: "Trae", vendor: "Trae", icon: "trae", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 600000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "AI 原生的编程工具，可用积分兑换模型调用。", reward: 0 },
-      { id: "workbuddy-cn", name: "WorkBuddy", vendor: "腾讯云", icon: "workbuddy", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 1000000, value: 10, status: "official", tag: "国内版", account: "示例账户", accountNote: "演示数据 · 不调用非公开客户端接口", intro: "腾讯云 WorkBuddy 国内版的积分与成长任务。正式产品只提供官方领取入口。", reward: 0 },
-      { id: "workbuddy-intl", name: "WorkBuddy", vendor: "WorkBuddy", icon: "workbuddyIntl", quotaText: "无签到活动", unit: "", balance: 0, tokens: 0, value: 0, status: "intl", tag: "国际版", account: "示例账户", accountNote: "演示数据", intro: "WorkBuddy 国际版用于查看账户与额度。已确认国际版签到端不存在，因此不提供签到操作。", reward: 0 },
-      { id: "cloudflare", name: "Cloudflare", vendor: "Workers AI", icon: "cloudflare", quotaText: "1万 Neurons", unit: "Neurons", balance: 10000, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "Cloudflare Workers AI 的免费 Neurons 额度，用于运行托管模型。", reward: 0 },
-      { id: "fal", name: "fal", vendor: "fal.ai", icon: "fal", quotaText: "1 次免费", unit: "次", balance: 1, tokens: 200000, value: 2, status: "official", account: "示例账户", accountNote: "演示数据", intro: "面向生成模型的推理平台，提供有限的免费调用次数。", reward: 0 },
-      { id: "ima", name: "ima", vendor: "腾讯 ima", icon: "ima", quotaText: "50 算力", unit: "算力", balance: 50, tokens: 0, value: 0, status: "no_activity", account: "已连接", accountNote: "演示账户", intro: "腾讯推出的知识库与写作助手。今日没有可领取的活动。", reward: 0 },
-      { id: "jimeng", name: "即梦", vendor: "即梦 AI", icon: "jimeng", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 700000, value: 7, status: "need_auth", account: "待授权", accountNote: "演示状态 · 尚未完成授权", intro: "图像与视频生成工具，授权完成后才可在正式版中走官方允许的领取方式。", reward: 0 },
-      { id: "astudio", name: "AStudio", vendor: "AStudio", icon: "astudio", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 400000, value: 4, status: "official", account: "示例账户", accountNote: "演示数据", intro: "模型应用工作室，提供可用于体验的积分。", reward: 0 },
-      { id: "zhipu", name: "智谱清言", vendor: "智谱 AI", icon: "zhipu", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 600000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "智谱 AI 的对话助手与开放平台每日免费额度。", reward: 0 },
-      { id: "kimi", name: "Kimi", vendor: "月之暗面", icon: "kimi", quotaText: "50万 tokens", unit: "tokens", balance: 500000, tokens: 500000, value: 8, status: "official", account: "示例账户", accountNote: "演示数据", intro: "月之暗面的长上下文助手，提供每日免费 tokens。", reward: 0 },
-      { id: "siliconflow", name: "硅基流动", vendor: "SiliconFlow", icon: "siliconflow", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "开源模型聚合推理平台的每日免费额度。", reward: 0 },
-      { id: "elevenlabs", name: "ElevenLabs", vendor: "ElevenLabs", icon: "elevenlabs", quotaText: "1万 字符", unit: "字符", balance: 10000, tokens: 0, value: 3, status: "official", account: "示例账户", accountNote: "演示数据", intro: "语音合成平台的免费字符额度。价值按官方套餐价粗算，不按 token 计。", reward: 0 },
-      { id: "edgeone", name: "EdgeOne", vendor: "腾讯云", icon: "edgeone", quotaText: "33 积分", unit: "积分", balance: 33, tokens: 400000, value: 4, status: "official", account: "示例账户", accountNote: "演示数据", intro: "腾讯云 EdgeOne 的体验积分。", reward: 0 },
-      { id: "cline", name: "Cline", vendor: "Cline", icon: "cline", quotaText: "月额度", unit: "月额度", balance: 1, tokens: 500000, value: 5, status: "need_auth", account: "待授权", accountNote: "演示状态 · 尚未完成授权", intro: "开源编程智能体。需先完成授权，正式版才会考虑读取官方允许的余额接口。", reward: 0 },
-      { id: "huoshan", name: "火山方舟", vendor: "火山引擎", icon: "huoshan", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 800000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "火山引擎的模型服务平台，提供可用于体验的额度。", reward: 0 },
-      { id: "spark", name: "讯飞星火", vendor: "科大讯飞", icon: "spark", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "科大讯飞星火大模型的每日免费额度。", reward: 0 }
+      { id: "modelscope", officialEntryUrl: "https://modelscope.cn/magicube/usage", name: "魔搭社区", vendor: "ModelScope", icon: "modelscope", quotaText: "尚未读取", unit: "魔粒", balance: null, tokens: null, value: 0, status: "no_activity", account: "未连接扩展", accountNote: "在扩展选项页保存你自己的魔搭访问令牌后，可读取官方魔粒余额。令牌只存在本机，不会进入本页面。", intro: "阿里云模型社区，汇集开源与托管模型。魔粒可用于 API-Inference 等能力。官方按调用次数扣减魔粒；每日额度在登录官方网站时自动到账，没有签到接口。", reward: 0, checkinSupported: false, livePlatform: true },
+      { id: "meeo", officialEntryUrl: "https://meoo.com/", name: "Meeo", vendor: "Meeo", icon: "meeo", quotaText: "8600 积分", unit: "积分", balance: 8600, tokens: 7800000, value: 18, status: "claimable", account: "已连接", accountNote: "演示账户", intro: "面向创作与日常对话的模型额度服务，可用积分兑换调用次数。", reward: 2000 },
+      { id: "tongyi", officialEntryUrl: "https://lingma.aliyun.com/", name: "通义灵码", vendor: "阿里云", icon: "tongyi", quotaText: "320 积分", unit: "积分", balance: 320, tokens: 3600000, value: 9, status: "fail_demo", account: "已连接", accountNote: "演示账户 · 此卡用于展示领取失败提示", intro: "阿里云推出的智能编码助手，可在 IDE 中完成补全、修改与问答。", reward: 80 },
+      { id: "officeace", officialEntryUrl: "https://www.huaweicloud.com/product/officeace.html", name: "OfficeAce", vendor: "OfficeAce", icon: "officeace", quotaText: "430 积分", unit: "积分", balance: 430, tokens: 1400000, value: 3, status: "claimed", account: "已连接", accountNote: "演示账户", intro: "面向办公场景的 AI 助手，可用积分兑换模型额度。", reward: 0, claimedReward: 100 },
+      { id: "doubao", officialEntryUrl: "https://www.doubao.com/", name: "豆包", vendor: "字节跳动", icon: "doubao", quotaText: "200 额度", unit: "额度", balance: 200, tokens: 1500000, value: 15, status: "official", account: "示例账户", accountNote: "演示数据，未接入官方接口", intro: "字节跳动的大模型助手，提供对话、创作与开放平台能力。", reward: 0 },
+      { id: "huawei", officialEntryUrl: "https://codearts.huaweicloud.com/portal/", name: "华为云", vendor: "CodeArts / 盘古", icon: "huawei", quotaText: "200 积分", unit: "积分", balance: 200, tokens: 1200000, value: 12, status: "official", account: "示例账户", accountNote: "演示数据", intro: "华为云盘古与 CodeArts 相关的模型与编程助手额度。", reward: 0 },
+      { id: "minimax", officialEntryUrl: "https://www.minimax.cn/", name: "MiniMax", vendor: "MiniMax", icon: "minimax", quotaText: "400 积分", unit: "积分", balance: 400, tokens: 2000000, value: 20, status: "official", account: "示例账户", accountNote: "演示数据", intro: "MiniMax 开放平台与海螺产品的模型积分。", reward: 0 },
+      { id: "qoder", officialEntryUrl: "https://qoder.com.cn/", name: "Qoder", vendor: "Qoder", icon: "qoder", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 800000, value: 8, status: "official", account: "示例账户", accountNote: "演示数据", intro: "面向开发者的编程智能体，提供每日免费额度。", reward: 0 },
+      { id: "trae", officialEntryUrl: "https://www.trae.cn/", name: "Trae", vendor: "Trae", icon: "trae", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 600000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "AI 原生的编程工具，可用积分兑换模型调用。", reward: 0 },
+      { id: "workbuddy-cn", officialEntryUrl: "https://www.workbuddy.cn/", name: "WorkBuddy", vendor: "腾讯云", icon: "workbuddy", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 1000000, value: 10, status: "official", tag: "国内版", account: "示例账户", accountNote: "演示数据 · 不调用非公开客户端接口", intro: "腾讯云 WorkBuddy 国内版的积分与成长任务。正式产品只提供官方领取入口。", reward: 0 },
+      { id: "workbuddy-intl", officialEntryUrl: "https://www.workbuddy.ai/", name: "WorkBuddy", vendor: "WorkBuddy", icon: "workbuddyIntl", quotaText: "无签到活动", unit: "", balance: 0, tokens: 0, value: 0, status: "intl", tag: "国际版", account: "示例账户", accountNote: "演示数据", intro: "WorkBuddy 国际版用于查看账户与额度。已确认国际版签到端不存在，因此不提供签到操作。", reward: 0 },
+      { id: "cloudflare", officialEntryUrl: "https://dash.cloudflare.com/", name: "Cloudflare", vendor: "Workers AI", icon: "cloudflare", quotaText: "1万 Neurons", unit: "Neurons", balance: 10000, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "Cloudflare Workers AI 的免费 Neurons 额度，用于运行托管模型。", reward: 0 },
+      { id: "fal", officialEntryUrl: "https://fal.ai/", name: "fal", vendor: "fal.ai", icon: "fal", quotaText: "1 次免费", unit: "次", balance: 1, tokens: 200000, value: 2, status: "official", account: "示例账户", accountNote: "演示数据", intro: "面向生成模型的推理平台，提供有限的免费调用次数。", reward: 0 },
+      { id: "ima", officialEntryUrl: "https://ima.qq.com/", name: "ima", vendor: "腾讯 ima", icon: "ima", quotaText: "50 算力", unit: "算力", balance: 50, tokens: 0, value: 0, status: "no_activity", account: "已连接", accountNote: "演示账户", intro: "腾讯推出的知识库与写作助手。今日没有可领取的活动。", reward: 0 },
+      { id: "jimeng", officialEntryUrl: "https://jimeng.jianying.com/", name: "即梦", vendor: "即梦 AI", icon: "jimeng", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 700000, value: 7, status: "need_auth", account: "待授权", accountNote: "演示状态 · 尚未完成授权", intro: "图像与视频生成工具，授权完成后才可在正式版中走官方允许的领取方式。", reward: 0 },
+      { id: "astudio", officialEntryUrl: "https://agent.xfyun.cn/overview/", name: "AStudio", vendor: "AStudio", icon: "astudio", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 400000, value: 4, status: "official", account: "示例账户", accountNote: "演示数据", intro: "模型应用工作室，提供可用于体验的积分。", reward: 0 },
+      { id: "zhipu", officialEntryUrl: "https://chatglm.cn/", name: "智谱清言", vendor: "智谱 AI", icon: "zhipu", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 600000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "智谱 AI 的对话助手与开放平台每日免费额度。", reward: 0 },
+      { id: "kimi", officialEntryUrl: "https://www.kimi.com/", name: "Kimi", vendor: "月之暗面", icon: "kimi", quotaText: "50万 tokens", unit: "tokens", balance: 500000, tokens: 500000, value: 8, status: "official", account: "示例账户", accountNote: "演示数据", intro: "月之暗面的长上下文助手，提供每日免费 tokens。", reward: 0 },
+      { id: "siliconflow", officialEntryUrl: "https://cloud.siliconflow.cn/", name: "硅基流动", vendor: "SiliconFlow", icon: "siliconflow", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "开源模型聚合推理平台的每日免费额度。", reward: 0 },
+      { id: "elevenlabs", officialEntryUrl: "https://elevenlabs.io/", name: "ElevenLabs", vendor: "ElevenLabs", icon: "elevenlabs", quotaText: "1万 字符", unit: "字符", balance: 10000, tokens: 0, value: 3, status: "official", account: "示例账户", accountNote: "演示数据", intro: "语音合成平台的免费字符额度。价值按官方套餐价粗算，不按 token 计。", reward: 0 },
+      { id: "edgeone", officialEntryUrl: "https://pages.edgeone.ai/", name: "EdgeOne", vendor: "腾讯云", icon: "edgeone", quotaText: "33 积分", unit: "积分", balance: 33, tokens: 400000, value: 4, status: "official", account: "示例账户", accountNote: "演示数据", intro: "腾讯云 EdgeOne 的体验积分。", reward: 0 },
+      { id: "cline", officialEntryUrl: "https://cline.bot/", name: "Cline", vendor: "Cline", icon: "cline", quotaText: "月额度", unit: "月额度", balance: 1, tokens: 500000, value: 5, status: "need_auth", account: "待授权", accountNote: "演示状态 · 尚未完成授权", intro: "开源编程智能体。需先完成授权，正式版才会考虑读取官方允许的余额接口。", reward: 0 },
+      { id: "huoshan", officialEntryUrl: "https://console.volcengine.com/ark", name: "火山方舟", vendor: "火山引擎", icon: "huoshan", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 800000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "火山引擎的模型服务平台，提供可用于体验的额度。", reward: 0 },
+      { id: "spark", officialEntryUrl: "https://xinghuo.xfyun.cn/", name: "讯飞星火", vendor: "科大讯飞", icon: "spark", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "科大讯飞星火大模型的每日免费额度。", reward: 0 }
     ];
 
     const BADGE_TEXT = {
@@ -1734,6 +1734,12 @@
       }
     }
 
+    function officialButton(card, label) {
+      if (!officialEntryUrl(card)) return "";
+      const kind = (card.status === "official") ? "secondary" : "ghost";
+      return `<button class="${kind}" type="button" data-act="official">${escapeHtml(label)}</button>`;
+    }
+
     function actionButtons(card, busy) {
       if (card.id === "modelscope" || card.livePlatform) {
         let html = `<button class="primary is-idle" type="button" disabled>无每日签到</button>`;
@@ -1748,30 +1754,35 @@
         } else {
           html += `<button class="secondary" type="button" data-act="connectHelp">如何连接扩展</button>`;
         }
-        html += `<button class="ghost" type="button" data-act="openUsage">打开官方魔粒页</button>`;
+        html += officialButton(card, "打开官方魔粒页");
         return html;
       }
       if (card.status === "intl") {
-        return `<button class="primary is-idle" type="button" disabled>国际版无签到</button>
-                <p class="est-note" style="text-align:center;margin:0">不提供可点击的站内签到按钮。</p>`;
+        return `<button class="primary is-idle" type="button" disabled>国际版无签到</button>`
+             + officialButton(card, "打开官网");
       }
       if (card.status === "no_activity") {
-        return `<button class="primary is-idle" type="button" disabled>今日无活动</button>`;
+        return `<button class="primary is-idle" type="button" disabled>今日无活动</button>`
+             + officialButton(card, "打开官网");
       }
       if (card.status === "claimed") {
-        return `<button class="primary is-done" type="button" disabled>今日已签</button>`;
+        return `<button class="primary is-done" type="button" disabled>今日已签</button>`
+             + officialButton(card, "打开官网");
       }
       if (card.status === "official") {
-        return `<button class="secondary" type="button" data-act="official">去官方领取</button>`;
+        return officialButton(card, "去官方领取")
+            || `<button class="secondary" type="button" data-act="official">去官方领取</button>`;
       }
       if (card.status === "need_auth") {
-        return `<button class="secondary" type="button" data-act="auth">需授权后可一键领取</button>`;
+        return `<button class="secondary" type="button" data-act="auth">需授权后可一键领取</button>`
+             + officialButton(card, "打开官网");
       }
       if (busy) {
         return `<button class="primary is-busy" type="button" disabled><span class="spin"></span>签到中…</button>`;
       }
       const label = card.status === "failed" ? "重试一键签到" : "一键签到";
-      return `<button class="primary" type="button" data-act="checkin" id="checkinBtn">${label}</button>`;
+      return `<button class="primary" type="button" data-act="checkin" id="checkinBtn">${label}</button>`
+           + officialButton(card, "打开官网");
     }
 
     function bindDrawerActions(card) {
@@ -1781,11 +1792,11 @@
         if (!btn) return;
         const act = btn.getAttribute("data-act");
         if (act === "checkin") startCheckin(card.id);
-        if (act === "official") openOfficialModal(card);
+        if (act === "official") openOfficialEntry(card);
         if (act === "auth") openAuthModal(card);
         if (act === "readBalance") startReadBalance(card.id);
         if (act === "openOptions") openExtensionOptions();
-        if (act === "openUsage") window.open("https://modelscope.cn/magicube/usage", "_blank", "noopener,noreferrer");
+        if (act === "openUsage") openOfficialEntry(card);
         if (act === "connectHelp") openConnectHelp();
       });
     }
@@ -1944,21 +1955,47 @@
       });
     }
 
-    function openOfficialModal(card) {
-      showModal({
-        title: "去官方领取",
-        body: `<p>正式版会跳转到 <b>${escapeHtml(card.name)}</b> 的官方领取页。</p>
-               <p style="margin-top:8px">本演示不会离开当前页面，也不会打开外部网站。这只是交互说明。</p>`,
-        actions: [{ label: "我知道了", kind: "primary", onClick: hideModal }]
-      });
+    function officialEntryUrl(card) {
+      const raw = card && typeof card.officialEntryUrl === "string" ? card.officialEntryUrl.trim() : "";
+      if (!raw) return "";
+      try {
+        const u = new URL(raw);
+        if (u.protocol !== "https:") return "";
+        return u.href;
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function openOfficialEntry(card) {
+      const url = officialEntryUrl(card);
+      if (!url) {
+        showModal({
+          title: "暂无已核实的官方入口",
+          body: `<p>目前还没有核实 <b>${escapeHtml(card.name)}</b> 的官方领取页，因此不会打开外部网站。</p>`,
+          actions: [{ label: "我知道了", kind: "primary", onClick: hideModal }]
+        });
+        return;
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
     }
 
     function openAuthModal(card) {
+      const url = officialEntryUrl(card);
+      const actions = [{ label: "我知道了", kind: "primary", onClick: hideModal }];
+      if (url) {
+        actions.unshift({
+          label: "打开官网",
+          kind: "secondary",
+          onClick: () => { hideModal(); openOfficialEntry(card); }
+        });
+      }
       showModal({
         title: "需授权后可一键领取",
         body: `<p><b>${escapeHtml(card.name)}</b> 当前为待授权状态。</p>
-               <p style="margin-top:8px">正式版将引导你完成该平台允许的授权（例如自备 API Key，或官方 OAuth）。本演示不会收集、保存或上传任何凭据。</p>`,
-        actions: [{ label: "我知道了", kind: "primary", onClick: hideModal }]
+               <p style="margin-top:8px">正式版将引导你完成该平台允许的授权（例如自备 API Key，或官方 OAuth）。本演示不会收集、保存或上传任何凭据。</p>
+               ${url ? `<p style="margin-top:8px">你可以先打开已核实的官方页面，在官网完成登录或领取。</p>` : ""}`,
+        actions
       });
     }
 
@@ -2055,7 +2092,7 @@
         <li><b>我的卡册</b>：各平台的积分或额度。右上角标会显示可领取、已领取、去官方、需授权等状态。</li>
         <li><b>薅羊毛</b>：限时或常设的官方活动、折扣、注册优惠和邀请奖励。卡片只展示已核验的官方来源，可按类型和地区筛选，并在本机标记「已领」或「不感兴趣」。信息可能变化，领取前请打开官方页确认。</li>
         <li><b>卡片详情</b>：点开卡片后会在旁边弹出小浮窗，可看产品介绍、当前账户情况、积分明细，以及预估可用 Token 和折合价值。</li>
-        <li><b>一键签到</b>：只有已授权且今日可领的平台，才会在站内直接领取；其余会提示去官方领取，或需要先授权。</li>
+        <li><b>一键签到</b>：只有已授权且今日可领的平台，才会在站内直接领取；其余会打开已核实的官方入口，或需要先授权。</li>
         <li><b>领取今日已授权项</b>：一次领取所有已授权且今日可领的卡片，不会对全平台自动签到。</li>
       </ul>
       <h3>使用方法</h3>
@@ -2064,7 +2101,8 @@
         <li>在右侧卡册浏览各平台，通过角标区分可领取、已领取、去官方或需授权。</li>
         <li>点开任意卡片，阅读产品介绍，并查看账户、积分和预估价值。</li>
         <li>若按钮是「一键签到」，点击即可完成。本页是演示，只会在浏览器里模拟，不会调用真实接口。</li>
-        <li>若按钮是「去官方领取」或「需授权后可一键领取」，按说明了解正式版会如何处理。</li>
+        <li>若按钮是「去官方领取」或「打开官网」，会在新标签页打开该平台已核实的官方入口。尚未核实入口的平台不会假装跳转。</li>
+        <li>若按钮是「需授权后可一键领取」，会说明授权方式，也可同时打开官网。</li>
         <li>若要一次领完已授权项，点击左下角「领取今日已授权项」。</li>
         <li>想恢复初始状态，点击顶栏「重置演示」。</li>
       </ol>
