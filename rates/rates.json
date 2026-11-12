@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-11",
+  "timezone": "Asia/Shanghai",
+  "notes": "公开换算表。只填写有官方依据的积分→Token 规则和每百万 Token 官方单价。找不到官方价时 estimateAvailable 必须为 false，界面显示「暂无官方价，不估值」，不得编造数字。",
+  "platforms": {
+    "modelscope": {
+      "id": "modelscope",
+      "name": "魔搭社区",
+      "unit": "魔粒",
+      "pointsToToken": null,
+      "pricePerMillionTokens": null,
+      "currency": "CNY",
+      "estimateAvailable": false,
+      "reason": "暂无官方价，不估值",
+      "officialBilling": {
+        "model": "per_call",
+        "summary": "官方按调用次数扣减魔粒，不按 Token 计价，因此无法换算为 Token 数量或人民币估值。",
+        "tiers": [
+          { "label": "轻量模型", "pointsPerCall": 0.5, "unit": "魔粒/次" },
+          { "label": "主流模型", "pointsPerCall": 1, "unit": "魔粒/次" },
+          { "label": "旗舰模型", "pointsPerCall": 2, "unit": "魔粒/次" }
+        ],
+        "sourceUrl": "https://modelscope.cn/posts/435591",
+        "sourceTitle": "魔搭社区「魔粒体系」正式上线！",
+        "updatedAt": "2026-08-10"
+      },
+      "sources": [
+        {
+          "url": "https://modelscope.cn/posts/435591",
+          "title": "魔搭社区「魔粒体系」正式上线！",
+          "updatedAt": "2026-08-10"
+        },
+        {
+          "url": "https://modelscope.cn/.well-known/openapi.json",
+          "title": "ModelScope OpenAPI 规范（含 GET /magicubes/balance）",
+          "updatedAt": "2026-11-03"
+        }
+      ]
+    }
+  }
+}

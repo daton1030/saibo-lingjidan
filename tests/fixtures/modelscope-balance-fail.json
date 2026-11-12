@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "code": "UNAUTHORIZED",
+  "message": "invalid token",
+  "request_id": "fixture-unauthorized"
+}

@@ -1,0 +1,10 @@
+{
+  "_comment": "OpenAPI GetBalanceResponse.properties.data.examples 中的整百示例",
+  "success": true,
+  "data": {
+    "total_balance": 1500,
+    "available_balance": 1300,
+    "frozen_amount": 200
+  },
+  "request_id": "c55709d2-4e09-4bd8-be84-d8518bc46363"
+}

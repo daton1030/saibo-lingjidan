@@ -1,0 +1,16 @@
+{
+  "name": "saibo-lingjidan",
+  "private": true,
+  "version": "0.1.0",
+  "description": "赛博领鸡蛋：开源看板与浏览器扩展原型。访问令牌只保存在用户本机。",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "sync-extension": "node scripts/sync-extension.mjs",
+    "serve": "python3 -m http.server 8080",
+    "build:site": "sh scripts/build-site.sh"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

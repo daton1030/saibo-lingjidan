@@ -1,0 +1,328 @@
+{
+ "load": {
+  "desktop": {
+   "runs": 5,
+   "median": {
+    "ttfb": 2.699999999254942,
+    "dcl": 26.5,
+    "load": 28.399999998509884,
+    "fcp": 60,
+    "lcp": 60
+   },
+   "cards": 24,
+   "horizontalOverflow": false,
+   "transfer": 16983
+  },
+  "mobile": {
+   "runs": 5,
+   "median": {
+    "ttfb": 2.5,
+    "dcl": 25.5,
+    "load": 27.200000002980232,
+    "fcp": 48,
+    "lcp": 48
+   },
+   "cards": 24,
+   "horizontalOverflow": false,
+   "transfer": 300
+  }
+ },
+ "rapidCheckin": {
+  "modelscope": {
+   "id": "modelscope",
+   "status": "claimed",
+   "balance": 1700,
+   "q": "1700 魔粒",
+   "cr": 500
+  },
+  "todayBefore": "¥183",
+  "todayAfter": "¥158",
+  "monthAfter": "¥73",
+  "toasts": 1
+ },
+ "rapidBatch": {
+  "wrongBalances": [
+   {
+    "id": "modelscope",
+    "expected": 1700,
+    "got": 101200
+   },
+   {
+    "id": "meeo",
+    "expected": 10600,
+    "got": 408600
+   }
+  ],
+  "tongyi": {
+   "id": "tongyi",
+   "status": "failed",
+   "balance": 320,
+   "q": "320 积分",
+   "cr": 0
+  },
+  "today": "¥140",
+  "month": "¥91",
+  "batchBtn": "今日已授权项已领完"
+ },
+ "rapidReset": {
+  "sameAsFresh": true,
+  "toastsAfter200": 201,
+  "today": "¥183",
+  "month": "¥48",
+  "toastsAfter3s": 0
+ },
+ "resetDuringCheckin": {
+  "modelscopeAfter": {
+   "id": "modelscope",
+   "status": "claimed",
+   "balance": 1700,
+   "q": "1700 魔粒",
+   "cr": 500
+  },
+  "drawerOpen": false,
+  "today": "¥158"
+ },
+ "resetDuringBatch": {
+  "claimedAfterReset": [
+   "officeace"
+  ],
+  "modalOpen": true,
+  "today": "¥183"
+ },
+ "staleDrawer": {
+  "afterSwitch_activeCardShouldBeDoubao_drawerTitle": "魔搭社区"
+ },
+ "checkinWhileOtherBusy": {
+  "btnShown": "一键签到",
+  "meeo": "claimable",
+  "modelscope": "claimed"
+ },
+ "drawers": {
+  "cards": 24,
+  "problems": []
+ },
+ "corruptStorage": {
+  "invalidJson": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "jsonNull": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "jsonString": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "cardsNull": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "cardsObject": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "nullEntries": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "badStatus": {
+   "cardsRendered": 24,
+   "undefinedBadges": 2,
+   "xss": false,
+   "today": "¥140",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "hax",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0,
+   "errorsOpeningDrawers": 0
+  },
+  "intlMadeClaimable": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "claimable",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "badTypes": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": {
+     "a": 1
+    }
+   },
+   "newErrors": 0,
+   "errorsOpeningDrawers": 0
+  },
+  "xssQuota": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "<img src=x onerror=window.__xss=1>"
+   },
+   "newErrors": 0
+  },
+  "proto": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "hugeBalance": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥158",
+   "month": "¥73",
+   "intl": "intl",
+   "ms": {
+    "s": "claimed",
+    "b": 1e+308,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "emptyString": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  }
+ },
+ "storageThrows": {
+  "cards": 24,
+  "newErrors": 0
+ },
+ "scale": {
+  "200": {
+   "render": 4.099999997764826,
+   "renderGridAvg": 3.445000000111759,
+   "drawer": 3.800000000745058,
+   "batchModal": 0.5999999977648258,
+   "domNodes": 2250,
+   "cardEls": 200,
+   "heapMB": 2.702324867248535,
+   "batchStepMs": 7.599999997764826,
+   "pendingForBatch": 118,
+   "batchEstimateSec": 65.8
+  },
+  "1000": {
+   "render": 21.799999997019768,
+   "renderGridAvg": 16.215000000037254,
+   "drawer": 15.600000001490116,
+   "batchModal": 1,
+   "domNodes": 10785,
+   "cardEls": 1000,
+   "heapMB": 5.250988006591797,
+   "batchStepMs": 32.600000001490116,
+   "pendingForBatch": 584,
+   "batchEstimateSec": 340.2
+  }
+ },
+ "totalErrors": [
+  {
+   "type": "console",
+   "msg": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ]
+}

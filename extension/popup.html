@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>赛博领鸡蛋</title>
+  <style>
+    :root { --bg:#14181f; --text:#f3f4f6; --muted:#9aa1ad; --gold:#f3c44a; --gold-ink:#1a1406; --line:rgba(255,255,255,.08); }
+    html, body { margin:0; background:var(--bg); color:var(--text); font:13px/1.5 "Noto Sans SC","PingFang SC",sans-serif; }
+    .box { width: 260px; padding: 14px; }
+    h1 { font-size: 14px; margin: 0 0 6px; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    button { width: 100%; height: 34px; border:0; border-radius:8px; font-weight:700; cursor:pointer; margin-top:6px; font-family:inherit; }
+    .primary { background: var(--gold); color: var(--gold-ink); }
+    .secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>赛博领鸡蛋</h1>
+    <p id="status">正在检查本机令牌…</p>
+    <button class="primary" id="optionsBtn" type="button">打开设置（保存令牌）</button>
+    <button class="secondary" id="dashBtn" type="button">查看使用说明</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

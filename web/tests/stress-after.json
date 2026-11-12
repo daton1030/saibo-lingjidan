@@ -1,0 +1,310 @@
+{
+ "load": {
+  "desktop": {
+   "runs": 5,
+   "median": {
+    "ttfb": 2.600000001490116,
+    "dcl": 26.199999999254942,
+    "load": 28.400000002235174,
+    "fcp": 60,
+    "lcp": 60
+   },
+   "cards": 24,
+   "horizontalOverflow": false,
+   "transfer": 17850
+  },
+  "mobile": {
+   "runs": 5,
+   "median": {
+    "ttfb": 2.800000000745058,
+    "dcl": 24.699999999254942,
+    "load": 26.399999998509884,
+    "fcp": 56,
+    "lcp": 56
+   },
+   "cards": 24,
+   "horizontalOverflow": false,
+   "transfer": 300
+  }
+ },
+ "rapidCheckin": {
+  "modelscope": {
+   "id": "modelscope",
+   "status": "claimed",
+   "balance": 1700,
+   "q": "1700 魔粒",
+   "cr": 500
+  },
+  "todayBefore": "¥183",
+  "todayAfter": "¥158",
+  "monthAfter": "¥73",
+  "toasts": 1
+ },
+ "rapidBatch": {
+  "wrongBalances": [],
+  "tongyi": {
+   "id": "tongyi",
+   "status": "failed",
+   "balance": 320,
+   "q": "320 积分",
+   "cr": 0
+  },
+  "today": "¥140",
+  "month": "¥91",
+  "batchBtn": "今日已授权项已领完"
+ },
+ "rapidReset": {
+  "sameAsFresh": true,
+  "toastsAfter200": 4,
+  "today": "¥183",
+  "month": "¥48",
+  "toastsAfter3s": 0
+ },
+ "resetDuringCheckin": {
+  "modelscopeAfter": {
+   "id": "modelscope",
+   "status": "claimable",
+   "balance": 1200,
+   "q": "1200 魔粒",
+   "cr": 0
+  },
+  "drawerOpen": false,
+  "today": "¥183"
+ },
+ "resetDuringBatch": {
+  "claimedAfterReset": [
+   "officeace"
+  ],
+  "modalOpen": false,
+  "today": "¥183"
+ },
+ "staleDrawer": {
+  "afterSwitch_activeCardShouldBeDoubao_drawerTitle": "豆包"
+ },
+ "checkinWhileOtherBusy": {
+  "btnShown": "一键签到",
+  "meeo": "claimed",
+  "modelscope": "claimed"
+ },
+ "drawers": {
+  "cards": 24,
+  "problems": []
+ },
+ "corruptStorage": {
+  "invalidJson": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "jsonNull": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "jsonString": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "cardsNull": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "cardsObject": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "nullEntries": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "badStatus": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0,
+   "errorsOpeningDrawers": 0
+  },
+  "intlMadeClaimable": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "badTypes": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0,
+   "errorsOpeningDrawers": 0
+  },
+  "xssQuota": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "<img src=x onerror=window.__xss=1>"
+   },
+   "newErrors": 0
+  },
+  "proto": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "hugeBalance": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥158",
+   "month": "¥73",
+   "intl": "intl",
+   "ms": {
+    "s": "claimed",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  },
+  "emptyString": {
+   "cardsRendered": 24,
+   "undefinedBadges": 0,
+   "xss": false,
+   "today": "¥183",
+   "month": "¥48",
+   "intl": "intl",
+   "ms": {
+    "s": "claimable",
+    "b": 1200,
+    "q": "1200 魔粒"
+   },
+   "newErrors": 0
+  }
+ },
+ "storageThrows": {
+  "cards": 24,
+  "newErrors": 0
+ },
+ "scale": {
+  "200": {
+   "render": 3.5,
+   "renderGridAvg": 3.0050000000745056,
+   "drawer": 3.5,
+   "batchModal": 0.6999999992549419,
+   "domNodes": 2251,
+   "cardEls": 200,
+   "heapMB": 2.6785926818847656,
+   "batchStepMs": 5.699999999254942,
+   "pendingForBatch": 118,
+   "batchEstimateSec": 65.6
+  },
+  "1000": {
+   "render": 19.700000002980232,
+   "renderGridAvg": 14.484999999962747,
+   "drawer": 15.700000002980232,
+   "batchModal": 1,
+   "domNodes": 10786,
+   "cardEls": 1000,
+   "heapMB": 4.853384971618652,
+   "batchStepMs": 30.600000001490116,
+   "pendingForBatch": 584,
+   "batchEstimateSec": 339.1
+  }
+ },
+ "totalErrors": []
+}

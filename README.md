@@ -1,0 +1,97 @@
+# 赛博领鸡蛋
+
+把各平台能免费领的大模型额度收成一张看板。本仓库是第一份可运行的后台原型：开源看板、Chrome Manifest V3 扩展骨架、平台适配器接口，以及第一个真实适配器——**魔搭（ModelScope）官方魔粒余额读取**。
+
+访问令牌只保存在你自己电脑的 `chrome.storage.local` 里，不会上传，也不会进入看板网页。本项目没有中心账号服务器。
+
+> 开源协议尚未确定（MIT 或 Apache-2.0 仍待确认），因此仓库暂时不放 LICENSE 文件。名称和 Logo 计划另行保留商标。
+
+## 5 步试用
+
+1. 进入本仓库根目录，启动静态服务（看板要从 `http://localhost` 打开，扩展才能和它通信）：
+
+   ```bash
+   python3 -m http.server 8080
+   ```
+
+2. 用 Chrome 打开 `chrome://extensions`，打开右上角「开发者模式」，点击「加载已解压的扩展程序」，选中本仓库里的 `extension/` 目录。
+
+3. 在扩展的选项页保存魔搭访问令牌：到官方页面 [modelscope.cn/my/myaccesstoken](https://modelscope.cn/my/myaccesstoken) 创建或复制你自己的令牌，粘贴后点「保存到本机」。令牌不会回显，也不会上传。可点「测试读取余额」确认官方接口可用。
+
+4. 打开 [http://localhost:8080/web/](http://localhost:8080/web/)。顶栏应显示「扩展已连接」。点开「魔搭社区」卡片，再点「读取余额」。
+
+5. 如果暂时没有访问令牌，不要编造余额。可打开 [http://localhost:8080/web/?fixture=modelscope&open=modelscope&guide=0](http://localhost:8080/web/?fixture=modelscope&open=modelscope&guide=0) 查看官方 OpenAPI 文档里的示例响应（998.5 魔粒），页面会标明这是夹具，不会向魔搭发送请求。
+
+可选：在仓库根目录执行 `npm test`，不需要真实令牌。
+
+## 什么是真实的，什么仍是演示
+
+**真实（本切片已接通）**
+
+- 魔搭余额：使用你自己的访问令牌，请求官方 OpenAPI `GET https://modelscope.cn/openapi/v1/magicubes/balance`（Bearer Token）。规范见 [OpenAPI JSON](https://modelscope.cn/.well-known/openapi.json) 中的 `Magicube` / `getBalance`。
+- 魔搭「签到」：官方没有签到接口，每日魔粒在登录官网时自动到账。卡片固定为「无每日签到」，**不会假装领取成功**。
+- 令牌存储与扩展 ↔ 看板通信（`postMessage`，令牌不离开扩展）。
+
+**仍是演示 / 尚未实现**
+
+- 卡册里除魔搭以外的平台：仍是前端演示数据，一键签到只在浏览器里模拟。
+- 「薅羊毛」板块的条目来自已核验的官方页面摘要，不是实时爬取；金额与截止时间以官方页为准。
+- 「在用户已登录的官方页面上点击官方按钮」这条路径：只保留了适配器接口，本切片没有实现具体点击。
+- 没有官方「积分 → Token」和「每百万 Token 人民币单价」的平台（包括魔搭）显示「暂无官方价，不估值」，不会编造价格。魔搭官方按**调用次数**扣减魔粒，见 [魔粒体系说明](https://modelscope.cn/posts/435591)。
+- 每日定时调度只有外壳（`scheduler/`），不会执行非官方自动领取。
+- 多设备同步、付费版服务尚未开始。
+
+## 魔搭官方依据
+
+| 事项 | 说明 | 来源 |
+| --- | --- | --- |
+| 查询余额 | `GET /openapi/v1/magicubes/balance`，`Authorization: Bearer <访问令牌>`，返回 `total_balance`、`available_balance`、`frozen_amount` | https://modelscope.cn/.well-known/openapi.json （规范版本 1.1.0+master.20261103T083422Z） |
+| 没有签到接口 | 注册并登录后每日 200 魔粒自动到账；绑定阿里云再加 50。本项目不调用任何非公开登录接口来「代领」 | https://modelscope.cn/posts/435591 |
+| Token / 人民币估值 | 官方按次扣减（轻量 0.5、主流 1、旗舰 2 魔粒/次），没有按 Token 或人民币的官方单价，故不估值 | 同上 |
+| 访问令牌 | 用户在官方控制台自行创建 | https://modelscope.cn/my/myaccesstoken |
+| 查看魔粒 | 官方页面 | https://modelscope.cn/magicube/usage |
+
+未读取到的余额显示「尚未读取」，不会写成 0。
+
+## 项目结构
+
+```
+adapters/           共享适配器：checkin() / getBalance() / productInfo
+rates/rates.json    公开换算表（不把汇率写死在逻辑里）
+extension/          Chrome Manifest V3 扩展（选项页保存令牌）
+scheduler/          调度外壳，不执行非官方领取
+web/                看板（由原先的前台 Demo 演进而来）
+deals/              公开「薅羊毛」活动表与校验加载器
+tests/              汇率换算、魔搭响应解析与活动表校验的单元测试（使用官方形状的夹具）
+```
+
+扩展里的 `extension/vendor/` 是 `adapters/`、`rates/` 与 `deals/` 的副本。修改源文件后请运行 `npm run sync-extension`。
+
+原先的前台 Demo 路径 `/workspace/saibo-lingjidan-demo` 已指向 `web/`，避免旧链接失效。
+
+
+## 薅羊毛
+
+看板在「我的卡册」下方增加「薅羊毛」板块，展示已核验的官方活动、折扣、注册优惠、邀请奖励和免费额度。数据来自公开的 `deals/deals.json`，状态（进行中 / 即将结束 / 已结束）由加载器按截止时间计算，不写进数据文件。截止日期未知时界面显示「截止时间未知」。
+
+活动信息可能随时变化，领取前请以官方页面为准。本项目不提供返利、邀请或联盟链接，也不会提示多开或非官方领取方法。
+
+URL 参数：`?deal=<id>` 或 `?open=deal:<id>` 可直接打开某条活动。
+
+### 如何贡献一条羊毛（PR 到 deals.json）
+
+欢迎通过 Pull Request 向 `deals/deals.json` 补充仍在进行的官方优惠。请遵守：
+
+1. 只提交你亲自打开并核验过的**官方页面**（帮助文档、定价页、官方博客或控制台公告）。把该页填入 `sourceUrl`，把官方领取/开通入口填入 `officialEntryUrl`，并把核验当天的日期写入 `verifiedAt`（`YYYY-MM-DD`）。
+2. 不得编造金额、日期或价格。官方没写清楚的字段请省略，或在摘要/条件里写「以官方页为准」。
+3. `type` 只能是：`活动`、`折扣`、`注册优惠`、`邀请奖励`、`免费额度`。`region` 只能是：`国内` 或 `国际`。
+4. 不要提交返利链接、邀请码、联盟参数，或任何非官方、逆向、多账号的「技巧」。
+5. 提交前在仓库根目录运行 `npm test`。无效条目会被加载器丢弃。
+
+看板里的「我知道一个羊毛」会指向本节。
+
+## 原则
+
+- 不搬运、不调用 XD Pool / Jet Hub / CreditDaddy 等项目的非公开客户端接口，不采集 Cookie，不解密凭据，不多账号轮换。
+- 不为魔搭编造未文档化的接口。
+- 不在仓库、日志或网页里写入真实令牌。本地环境文件已列入 `.gitignore`。

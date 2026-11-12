@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>赛博领鸡蛋 · 扩展设置</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="brand">
+      <img class="logo" src="icons/icon48.png" alt="" width="32" height="32" />
+      <div>
+        <h1>赛博领鸡蛋</h1>
+        <p>访问令牌只保存在这台电脑的浏览器里，不会上传到我们的服务器，也不会写入看板网页。</p>
+      </div>
+    </header>
+
+    <section class="card" id="modelscopeCard">
+      <div class="card-head">
+        <h2>魔搭社区（ModelScope）</h2>
+        <span class="pill" id="keyStatus">未保存令牌</span>
+      </div>
+      <p class="lead">
+        魔粒余额通过官方 OpenAPI
+        <code>GET /openapi/v1/magicubes/balance</code>
+        读取，使用你自己的访问令牌作为 Bearer Token。
+        魔搭没有每日签到接口，扩展不会假装签到成功。
+      </p>
+      <ol class="steps">
+        <li>打开官方页面 <a href="https://modelscope.cn/my/myaccesstoken" target="_blank" rel="noopener noreferrer">modelscope.cn/my/myaccesstoken</a>，创建或复制访问令牌。</li>
+        <li>把令牌粘贴到下面，点「保存到本机」。保存后输入框会被清空，页面里不会回显令牌。</li>
+        <li>可点「测试读取余额」确认官方接口可用。然后回到看板，打开魔搭卡片，点「读取余额」。</li>
+      </ol>
+      <label class="field">
+        <span>魔搭访问令牌</span>
+        <input id="tokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴访问令牌，仅保存在本机" />
+      </label>
+      <div class="actions">
+        <button type="button" class="primary" id="saveBtn">保存到本机</button>
+        <button type="button" class="secondary" id="testBtn">测试读取余额</button>
+        <button type="button" class="ghost" id="deleteBtn">删除本机令牌</button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </section>
+
+    <section class="card muted">
+      <h2>文档与范围</h2>
+      <ul>
+        <li>官方 OpenAPI 规范：<a href="https://modelscope.cn/.well-known/openapi.json" target="_blank" rel="noopener noreferrer">modelscope.cn/.well-known/openapi.json</a></li>
+        <li>魔粒说明：<a href="https://modelscope.cn/posts/435591" target="_blank" rel="noopener noreferrer">魔粒体系上线说明</a></li>
+        <li>查看魔粒：<a href="https://modelscope.cn/magicube/usage" target="_blank" rel="noopener noreferrer">我的魔粒</a></li>
+      </ul>
+      <p class="note">令牌存在 <code>chrome.storage.local</code>，不使用同步存储。卸载扩展即删除。本扩展不会导出 Cookie，也不会调用非公开客户端接口。</p>
+    </section>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

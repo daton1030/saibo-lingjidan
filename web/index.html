@@ -1,0 +1,2284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%27.9em%27 font-size=%2726%27%3E%F0%9F%A5%9A%3C/text%3E%3C/svg%3E">
+  <title>赛博领鸡蛋 · 看板</title>
+  <meta name="description" content="赛博领鸡蛋看板：每日福利卡片、官方余额读取与领取状态。未连接扩展时，除说明外仍为演示数据。" />
+  <meta name="saibo-lingjidan" content="dashboard">
+  <style>
+    :root {
+      --bg: #0b0d11;
+      --bg-soft: #10141a;
+      --panel: #14181f;
+      --panel-2: #191e27;
+      --card: #1c222c;
+      --card-hover: #242b37;
+      --line: rgba(255, 255, 255, 0.07);
+      --line-strong: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --text-2: #9aa1ad;
+      --text-3: #6f7784;
+      --gold: #f3c44a;
+      --gold-2: #ffe08a;
+      --gold-ink: #1a1406;
+      --gold-dim: rgba(243, 196, 74, 0.14);
+      --gold-line: rgba(243, 196, 74, 0.45);
+      --green: #3ecf8e;
+      --green-dim: rgba(62, 207, 142, 0.14);
+      --blue: #7aa2ff;
+      --blue-dim: rgba(122, 162, 255, 0.14);
+      --orange: #f0a14a;
+      --orange-dim: rgba(240, 161, 74, 0.16);
+      --red: #f07178;
+      --red-dim: rgba(240, 113, 120, 0.14);
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.38);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font: "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --mono: "SF Mono", "Cascadia Mono", "Noto Sans Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
+    body {
+      min-height: 100%;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    button, input { font-family: inherit; }
+    button { cursor: pointer; border: 0; background: none; color: inherit; }
+    img, svg { display: block; }
+
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(1200px 500px at 12% -10%, rgba(243, 196, 74, 0.06), transparent 55%),
+        radial-gradient(800px 400px at 90% 0%, rgba(80, 110, 180, 0.08), transparent 50%),
+        var(--bg);
+    }
+
+    /* Top bar */
+    .topbar {
+      flex: 0 0 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(11, 13, 17, 0.82);
+      backdrop-filter: blur(12px);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .logo {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+    }
+    .brand-text { min-width: 0; }
+    .brand-name {
+      font-size: 15.5px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      line-height: 1.15;
+    }
+    .brand-sub {
+      margin-top: 2px;
+      font-size: 11.5px;
+      color: var(--text-2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid var(--gold-line);
+      background: var(--gold-dim);
+      color: var(--gold-2);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .link-btn {
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      color: var(--text-2);
+      font-size: 12px;
+      border: 1px solid transparent;
+    }
+    .link-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+    /* Main */
+    .main {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 268px minmax(0, 1fr);
+      gap: 16px;
+      padding: 16px 20px 18px;
+    }
+
+    /* Summary */
+    .summary {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px 22px 18px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .summary::before {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      left: -60px;
+      top: -80px;
+      background: radial-gradient(circle, rgba(243, 196, 74, 0.16), transparent 68%);
+      pointer-events: none;
+    }
+    .sum-label {
+      position: relative;
+      font-size: 13px;
+      color: var(--text-2);
+      font-weight: 500;
+    }
+    .sum-amount {
+      position: relative;
+      margin: 8px 0 0;
+      font-size: 56px;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      color: var(--gold);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .sum-amount em { font-style: normal; font-size: 28px; margin-right: 2px; vertical-align: 12px; font-weight: 600; }
+    .sum-hint {
+      position: relative;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+    .sum-split {
+      position: relative;
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-2);
+    }
+    .sum-split span { display: flex; justify-content: space-between; gap: 8px; }
+    .sum-split b { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+
+    .sum-block {
+      position: relative;
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    .sum-block .sum-label { margin-bottom: 6px; }
+    .sum-month {
+      font-size: 26px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .sum-count {
+      margin-top: 18px;
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+    .sum-count.soon { color: var(--gold-2); }
+
+    .batch-btn {
+      margin-top: auto;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--gold);
+      color: var(--gold-ink);
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: 0 6px 18px rgba(243, 196, 74, 0.22);
+      transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+    }
+    .batch-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .batch-btn:active { transform: translateY(0); filter: brightness(.98); }
+    .batch-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; filter: none; }
+    .batch-note {
+      margin-top: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text-3);
+      text-align: center;
+    }
+
+    /* Album */
+    .album {
+      min-width: 0;
+      min-height: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .album-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 2px 6px 12px;
+      flex: 0 0 auto;
+    }
+    .album-title { font-size: 16px; font-weight: 650; letter-spacing: 0.02em; }
+    .album-meta { font-size: 12px; color: var(--text-3); }
+
+    .grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-auto-rows: min-content;
+      gap: 8px;
+      align-content: start;
+      overflow: auto;
+    }
+
+    .card {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 10px 10px 12px;
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: 8px;
+      row-gap: 2px;
+      align-items: center;
+      text-align: left;
+      color: inherit;
+      min-height: 0;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+      user-select: none;
+    }
+    .card:hover, .card:focus-visible {
+      background: var(--card-hover);
+      border-color: var(--line-strong);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+      outline: none;
+    }
+    .card.is-claimable { border-color: rgba(243, 196, 74, 0.28); }
+    .card.is-claimable:hover { border-color: var(--gold-line); box-shadow: 0 8px 22px rgba(243, 196, 74, 0.1); }
+    .card.is-claimed { opacity: 0.92; }
+    .card.is-intl, .card.is-no_activity { opacity: 0.78; }
+    .card.is-active {
+      border-color: var(--gold-line);
+      box-shadow: 0 0 0 1px rgba(243, 196, 74, 0.25);
+    }
+
+    .card-icon {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      border-radius: 6px;
+      overflow: hidden;
+      flex: none;
+      align-self: start;
+      margin-top: 1px;
+    }
+    .card-icon svg { width: 20px; height: 20px; }
+    .card-main {
+      grid-column: 2;
+      min-width: 0;
+      padding-right: 52px;
+    }
+    .card-name {
+      font-size: 12.5px;
+      font-weight: 650;
+      line-height: 1.25;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-quota {
+      margin-top: 2px;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      text-align: left;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-tag {
+      display: inline;
+      margin-left: 6px;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-3);
+    }
+    .badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 650;
+      display: inline-flex;
+      align-items: center;
+      letter-spacing: 0.02em;
+      max-width: 58px;
+      overflow: hidden;
+    }
+    .badge-claimable { background: var(--gold-dim); color: var(--gold-2); }
+    .badge-claimed { background: var(--green-dim); color: var(--green); }
+    .badge-official { background: var(--blue-dim); color: var(--blue); }
+    .badge-need_auth { background: var(--orange-dim); color: var(--orange); }
+    .badge-no_activity, .badge-intl { background: rgba(255,255,255,0.06); color: var(--text-3); }
+    .badge-failed, .badge-fail_demo { background: var(--red-dim); color: var(--red); }
+
+    /* Thin, dark scrollbars — no fat Windows gutter */
+    .grid,
+    .drawer-body,
+    .modal .body {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+    }
+    .grid::-webkit-scrollbar,
+    .drawer-body::-webkit-scrollbar,
+    .modal .body::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .grid::-webkit-scrollbar-track,
+    .drawer-body::-webkit-scrollbar-track,
+    .modal .body::-webkit-scrollbar-track { background: transparent; }
+    .grid::-webkit-scrollbar-thumb,
+    .drawer-body::-webkit-scrollbar-thumb,
+    .modal .body::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+    }
+    .grid::-webkit-scrollbar-thumb:hover,
+    .drawer-body::-webkit-scrollbar-thumb:hover,
+    .modal .body::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.32); }
+    .grid::-webkit-scrollbar-corner,
+    .drawer-body::-webkit-scrollbar-corner,
+    .modal .body::-webkit-scrollbar-corner { background: transparent; }
+
+    /* Compact popover anchored to the clicked card */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 40;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .16s ease;
+    }
+    .overlay.is-open { opacity: 1; pointer-events: auto; }
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: min(340px, calc(100vw - 24px));
+      max-height: min(70vh, 520px);
+      height: auto;
+      background: #171c24;
+      border: 1px solid var(--line-strong);
+      border-radius: 14px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.04);
+      transform: translateY(8px) scale(0.98);
+      transform-origin: top left;
+      opacity: 0;
+      transition: transform .16s cubic-bezier(.2,.8,.2,1), opacity .14s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .overlay.is-open .drawer { transform: translateY(0) scale(1); opacity: 1; }
+    .drawer-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 12px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .drawer-head .card-icon { margin: 0; width: 28px; height: 28px; flex-basis: 28px; border-radius: 8px; }
+    .drawer-head .card-icon svg { width: 28px; height: 28px; }
+    .drawer-titles { flex: 1; min-width: 0; }
+    .drawer-titles h2 { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+    .drawer-titles p { margin-top: 3px; font-size: 12px; color: var(--text-2); }
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      color: var(--text-2);
+      display: grid;
+      place-items: center;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .drawer-body {
+      flex: 1;
+      overflow: auto;
+      padding: 10px 12px 12px;
+    }
+    .banner {
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      margin-bottom: 10px;
+      border: 1px solid transparent;
+    }
+    .banner b { font-weight: 720; }
+    .banner-ok { background: var(--green-dim); border-color: rgba(62, 207, 142, 0.28); color: #b6f3d4; }
+    .banner-err { background: var(--red-dim); border-color: rgba(240, 113, 120, 0.3); color: #ffc4c7; }
+    .banner-info { background: rgba(255,255,255,0.04); border-color: var(--line); color: var(--text-2); }
+    .banner-warn { background: var(--orange-dim); border-color: rgba(240, 161, 74, 0.28); color: #ffd7a8; }
+
+    .block { margin-bottom: 12px; }
+    .block h3 {
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+    .block p, .intro { font-size: 13px; line-height: 1.6; color: var(--text-2); }
+    .facts {
+      display: grid;
+      gap: 8px;
+    }
+    .fact {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 8px 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .fact .k { font-size: 12.5px; color: var(--text-2); }
+    .fact .v { font-size: 13px; font-weight: 650; text-align: right; font-variant-numeric: tabular-nums; }
+    .fact .v small { display: block; font-weight: 500; color: var(--text-3); font-size: 11px; margin-top: 2px; }
+    .est-note { margin-top: 8px; font-size: 11.5px; color: var(--text-3); line-height: 1.55; }
+
+    .drawer-foot {
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .primary, .secondary, .ghost {
+      height: 36px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      transition: filter .15s ease, transform .15s ease, opacity .15s ease, background .15s ease;
+    }
+    .primary { background: var(--gold); color: var(--gold-ink); }
+    .primary:hover { filter: brightness(1.05); }
+    .primary:disabled, .secondary:disabled { cursor: not-allowed; filter: none; }
+    .primary.is-done { background: var(--green-dim); color: var(--green); box-shadow: none; opacity: 1; }
+    .primary.is-idle { background: rgba(255,255,255,0.06); color: var(--text-3); box-shadow: none; opacity: 1; }
+    .primary.is-busy { cursor: wait; opacity: .85; }
+    .secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line-strong);
+    }
+    .secondary:hover { background: rgba(255,255,255,0.04); }
+    .ghost { color: var(--text-2); font-weight: 600; height: 34px; }
+    .ghost:hover { color: var(--text); }
+    .spin {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid rgba(26,20,6,0.25); border-top-color: var(--gold-ink);
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Modal */
+    .modal-root {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(0,0,0,0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    .modal-root.is-open { opacity: 1; pointer-events: auto; }
+    .modal {
+      width: min(480px, 100%);
+      background: #171c24;
+      border: 1px solid var(--line-strong);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 20px 20px 16px;
+      max-height: min(86vh, 640px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal.is-guide {
+      width: min(640px, 100%);
+      max-height: min(90vh, 780px);
+      padding: 24px 24px 18px;
+    }
+    .modal h2 { font-size: 17px; font-weight: 700; margin-bottom: 10px; flex: 0 0 auto; }
+    .modal .body { font-size: 13.5px; line-height: 1.62; color: var(--text-2); overflow: auto; min-height: 0; flex: 1 1 auto; padding-right: 4px; }
+    .modal .body ul { margin: 8px 0 0; padding-left: 18px; }
+    .modal .body ol { margin: 8px 0 0; padding-left: 20px; }
+    .modal .body li { margin: 3px 0; }
+    .modal .body .ok { color: var(--green); }
+    .modal .body .warn { color: var(--orange); }
+    .guide-lead { color: var(--text); margin-bottom: 2px; }
+    .modal .body h3 {
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      margin: 12px 0 4px;
+    }
+    .guide-note { margin-top: 10px; font-size: 12px; color: var(--text-3); line-height: 1.6; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); flex: 0 0 auto; }
+    .modal-actions .primary, .modal-actions .secondary { width: auto; padding: 0 16px; height: 38px; }
+
+    .toast-wrap {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: none;
+      background: #1c222c;
+      border: 1px solid var(--line-strong);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 650;
+      box-shadow: var(--shadow);
+      animation: pop .28s ease;
+    }
+    .toast.ok { border-color: rgba(62, 207, 142, 0.4); }
+    .toast.err { border-color: rgba(240, 113, 120, 0.45); }
+    @keyframes pop { from { transform: translateY(-8px); opacity: 0; } to { opacity: 1; } }
+
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; }
+    .dot.warn { background: var(--orange); }
+    .dot.muted { background: var(--text-3); }
+
+
+    .chip.ext.is-off { border-color: var(--line-strong); background: rgba(255,255,255,0.04); color: var(--text-2); }
+    .chip.ext.is-on { border-color: rgba(62, 207, 142, 0.45); background: var(--green-dim); color: var(--green); }
+    .card-quota.is-unread, .fact .v.is-unread { color: var(--text-3); font-weight: 600; }
+    .secondary .spin { border-color: rgba(255,255,255,0.2); border-top-color: var(--text); }
+    .drawer-foot .ghost { width: 100%; }
+    @media (max-width: 1100px) {
+      .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    }
+
+    /* Stage: album + deals */
+    .stage {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .stage .album { flex: 1.1 1 0; min-height: 0; }
+    .deals {
+      flex: 0 1 42%;
+      min-height: 210px;
+      max-height: 46%;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px 16px 12px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .deal-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 8px;
+      padding: 0 2px 10px;
+      flex: 0 0 auto;
+    }
+    .deal-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .deal-chip {
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--text-2);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .deal-chip:hover { border-color: var(--line-strong); color: var(--text); }
+    .deal-chip.is-on {
+      border-color: var(--gold-line);
+      background: var(--gold-dim);
+      color: var(--gold-2);
+    }
+    .deal-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-3);
+      user-select: none;
+    }
+    .deal-toggle input { accent-color: var(--gold); }
+    .deal-contrib {
+      font-size: 11px;
+      color: var(--blue);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .deal-contrib:hover { text-decoration: underline; }
+    .deal-grid { flex: 1; min-height: 0; }
+    .deal-card .card-name { white-space: nowrap; }
+    .deal-card .card-quota { color: var(--text-2); font-weight: 500; }
+    .deal-card .card-vendor {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-3);
+      letter-spacing: 0.02em;
+      margin-bottom: 1px;
+    }
+    .deal-card.is-ended, .deal-card.is-skipped { opacity: 0.72; }
+    .deal-card.is-claimed { opacity: 0.9; }
+    .badge-ongoing { background: var(--green-dim); color: var(--green); }
+    .badge-ending { background: var(--orange-dim); color: var(--orange); }
+    .badge-ended { background: rgba(255,255,255,0.06); color: var(--text-3); }
+    .badge-skipped { background: rgba(255,255,255,0.06); color: var(--text-3); }
+    .deal-note {
+      flex: 0 0 auto;
+      margin-top: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text-3);
+    }
+    .drawer-link {
+      color: var(--blue);
+      font-size: 13px;
+      word-break: break-all;
+    }
+    .mark-row { display: flex; gap: 8px; }
+    .mark-row .secondary, .mark-row .ghost { flex: 1; width: auto; }
+    .ghost.is-on, .secondary.is-on { border: 1px solid var(--line-strong); background: rgba(255,255,255,0.06); color: var(--text); }
+    .deal-card { grid-template-rows: auto auto auto; align-items: start; padding-top: 10px; padding-bottom: 10px; }
+    .deal-card .card-icon { grid-row: 1 / span 3; }
+    .deal-card .card-quota { white-space: nowrap; }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100%; }
+      .main {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .summary { min-height: auto; }
+      .stage { max-height: none; }
+      .deals { max-height: none; min-height: 0; flex: none; }
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+        grid-auto-rows: min-content;
+      }
+      .brand-sub { display: none; }
+    }
+    @media (max-width: 640px) {
+      .topbar { padding: 0 14px; }
+      .main { padding: 12px; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); grid-auto-rows: min-content; }
+      .sum-amount { font-size: 44px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <defs>
+            <linearGradient id="eggG" x1="8" y1="2" x2="24" y2="30">
+              <stop stop-color="#FFE08A"/>
+              <stop offset="1" stop-color="#E8A817"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 3.2C21.9 3.2 26.6 11 26.6 18.1C26.6 25.2 21.9 29.6 16 29.6C10.1 29.6 5.4 25.2 5.4 18.1C5.4 11 10.1 3.2 16 3.2Z" fill="url(#eggG)"/>
+          <ellipse cx="16" cy="19.2" rx="5.1" ry="5.5" fill="#fff6d4"/>
+        </svg>
+        <div class="brand-text">
+          <div class="brand-name">赛博领鸡蛋</div>
+          <div class="brand-sub">能免费领的大模型额度，按官方价折成人民币</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="chip" id="demoChip" title="除已对接官方接口的卡片外，数字与账户状态均为演示数据">演示数据</span>
+        <span class="chip ext is-off" id="extChip" title="扩展未连接时，魔搭余额不会向官方接口请求">扩展未连接</span>
+        <button class="link-btn" id="helpBtn" type="button">使用说明</button>
+        <button class="link-btn" id="resetBtn" type="button">重置演示</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <aside class="summary">
+        <div class="sum-label">今天还能领</div>
+        <div class="sum-amount" id="todayAmount"><em>¥</em>0</div>
+        <p class="sum-hint">按官方标价的演示估算，含需去官方领取的项。</p>
+        <div class="sum-split">
+          <span>可站内一键领取 <b id="inAppValue">¥0</b></span>
+          <span>需官方或授权后领取 <b id="outAppValue">¥0</b></span>
+        </div>
+
+        <div class="sum-block">
+          <div class="sum-label">本月已领到</div>
+          <div class="sum-month" id="monthAmount">¥0</div>
+        </div>
+
+        <div class="sum-block">
+          <div class="sum-label">下次刷新</div>
+          <div class="sum-count" id="countdown">还有 --:--:--</div>
+          <p class="sum-hint">按北京时间每日 00:00 刷新（演示倒计时）</p>
+        </div>
+
+        <button class="batch-btn" id="batchBtn" type="button">领取今日已授权项</button>
+        <p class="batch-note">只会领取已授权且今日可领的项，不会全平台自动签到。</p>
+      </aside>
+
+      <div class="stage">
+        <section class="album">
+          <div class="album-head">
+            <h1 class="album-title">我的卡册</h1>
+            <div class="album-meta" id="albumMeta">0 张 · 演示数据</div>
+          </div>
+          <div class="grid" id="grid"></div>
+        </section>
+        <section class="deals" id="dealsSection">
+          <div class="album-head">
+            <h1 class="album-title">薅羊毛</h1>
+            <div class="album-meta" id="dealsMeta">加载中…</div>
+          </div>
+          <div class="deal-toolbar">
+            <div class="deal-chips" id="dealTypeChips" role="tablist" aria-label="按类型筛选"></div>
+            <div class="deal-chips" id="dealRegionChips" role="tablist" aria-label="按地区筛选"></div>
+            <label class="deal-toggle"><input type="checkbox" id="hideEnded" checked /> 隐藏已结束</label>
+            <a class="deal-contrib" id="dealContribute" href="../README.md#%E8%96%85%E7%BE%8A%E6%AF%9B" target="_blank" rel="noopener noreferrer">我知道一个羊毛</a>
+          </div>
+          <div class="grid deal-grid" id="dealGrid"></div>
+          <p class="deal-note">活动信息可能随时变化，领取前请以官方页面为准。本站不提供返利或邀请链接。</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"></aside>
+  </div>
+
+  <div class="modal-root" id="modalRoot" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" id="modal">
+      <h2 id="modalTitle"></h2>
+      <div class="body" id="modalBody"></div>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toasts"></div>
+
+  <script>
+    const MONTH_BASE = 45; // 本月此前已领取的演示基数（不含今日已领卡片）
+    const STORAGE_KEY = "saibo-lingjidan-demo-v2";
+    const DEAL_STORAGE_KEY = "saibo-lingjidan-deals-v1";
+    const DEAL_TYPE_FILTERS = ["全部", "活动", "折扣", "注册优惠", "邀请奖励", "免费额度"];
+    const DEAL_REGION_FILTERS = ["全部", "国内", "国际"];
+    const DEAL_ICON_COLORS = {
+      "硅基流动": ["#6c5ce7", "硅"],
+      "阿里云百炼": ["#6a5af9", "百"],
+      "Kimi 开放平台": ["#1a1c22", "K"],
+      "腾讯云 TokenHub": ["#2f6feb", "T"],
+      "百度千帆": ["#2d6aec", "帆"],
+      "火山方舟": ["#ff5d1f", "火"],
+      "Google Gemini API": ["#4285f4", "G"],
+      "Anthropic Claude API": ["#d97706", "C"],
+      "DeepSeek": ["#1a1c22", "D"]
+    };
+    let dealApi = null;
+    let dealItems = [];
+    let dealFilterType = "全部";
+    let dealFilterRegion = "全部";
+    let hideEndedDeals = true;
+    let dealMarks = { claimed: {}, skipped: {} };
+    let dealsLoaded = false;
+
+    const ICONS = {
+      modelscope: icon("#5b4dff", '<path d="M14 14h8v8h-8z" fill="#fff"/><path d="M20 16h8v8h-8z" fill="#fff" opacity=".55"/><path d="M16 20h8v8h-8z" fill="#fff" opacity=".35"/>'),
+      meeo: icon("#7a4dff", '<text x="24" y="29" text-anchor="middle" font-size="18" font-weight="700" fill="#fff" font-family="ui-sans-serif,system-ui,sans-serif">M</text>'),
+      tongyi: icon("#6a5af9", '<path d="M18 20l-5 4 5 4M30 20l5 4-5 4M26 16l-4 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'),
+      officeace: icon("#c51a1a", '<path d="M15 15h18v18H15z" fill="none" stroke="#fff" stroke-width="2"/><path d="M18 24h12M24 18v12" stroke="#fff" stroke-width="2"/>'),
+      doubao: icon("#3d6bff", '<ellipse cx="24" cy="24" rx="9" ry="11" fill="#fff"/><ellipse cx="24" cy="25" rx="4.5" ry="5" fill="#3d6bff"/>'),
+      huawei: icon("#cf0a2c", '<path d="M24 14c4 5 9 8 9 13a9 9 0 1 1-18 0c0-5 5-8 9-13z" fill="#fff"/>'),
+      minimax: icon("#111216", '<path d="M16 32V16l8 10 8-10v16" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>'),
+      qoder: icon("#4f6dff", '<circle cx="24" cy="24" r="9" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M24 18v12M18 24h12" stroke="#fff" stroke-width="2.2"/>'),
+      trae: icon("#1d1f27", '<text x="24" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#9ad0ff" font-family="ui-sans-serif,system-ui,sans-serif">T</text>'),
+      workbuddy: icon("#2f6feb", '<rect x="15" y="16" width="18" height="16" rx="3" fill="#fff"/><circle cx="21" cy="24" r="1.6" fill="#2f6feb"/><circle cx="27" cy="24" r="1.6" fill="#2f6feb"/>'),
+      workbuddyIntl: icon("#3d4450", '<rect x="15" y="16" width="18" height="16" rx="3" fill="#cfd5de"/><circle cx="21" cy="24" r="1.6" fill="#3d4450"/><circle cx="27" cy="24" r="1.6" fill="#3d4450"/>'),
+      cloudflare: icon("#f6821f", '<path d="M14 26h19a5 5 0 0 0-1-9.8 7.5 7.5 0 0 0-14.2 2.2A5 5 0 0 0 14 26z" fill="#fff"/>'),
+      fal: icon("#101114", '<text x="24" y="29" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="ui-sans-serif,system-ui,sans-serif">fal</text>'),
+      ima: icon("#1f8a4d", '<circle cx="24" cy="24" r="10" fill="#fff"/><circle cx="20.5" cy="22" r="2" fill="#1f8a4d"/><circle cx="27.5" cy="22" r="2" fill="#1f8a4d"/><ellipse cx="24" cy="28" rx="3" ry="2" fill="#1f8a4d"/>'),
+      jimeng: icon("#00b3c7", '<path d="M16 30c6-14 10-14 16 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="24" cy="16" r="3" fill="#fff"/>'),
+      astudio: icon("#e07a1f", '<text x="24" y="29" text-anchor="middle" font-size="18" font-weight="700" fill="#fff" font-family="ui-sans-serif,system-ui,sans-serif">A</text>'),
+      zhipu: icon("#0b4f86", '<rect x="15" y="15" width="18" height="18" rx="3" fill="#fff"/><path d="M20 20h8v2.4h-8zm0 5h8v2.4h-8z" fill="#0b4f86"/>'),
+      kimi: icon("#1a1c22", '<circle cx="24" cy="24" r="10" fill="#fff"/><circle cx="24" cy="24" r="4.5" fill="#1a1c22"/>'),
+      siliconflow: icon("#6c5ce7", '<path d="M18 30V18l12 12V18" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>'),
+      elevenlabs: icon("#141414", '<path d="M17 16h3v16h-3zm5.5 4h3v12h-3zm5.5-4h3v16h-3z" fill="#fff"/>'),
+      edgeone: icon("#e34c3b", '<path d="M15 26a9 9 0 1 1 16.2-4H32a7 7 0 0 1-13.4 4H15z" fill="#fff"/>'),
+      cline: icon("#d39b2f", '<rect x="16" y="16" width="16" height="16" rx="3" fill="#fff"/><path d="M20 28V20h3.2l2.8 8H20z" fill="#d39b2f"/>'),
+      huoshan: icon("#ff5d1f", '<path d="M24 13c3 5 8 8 8 14a8 8 0 1 1-16 0c0-6 5-9 8-14z" fill="#fff"/>'),
+      spark: icon("#1677ff", '<path d="M24 12l2.2 7.2H34l-6.2 4.4 2.4 7.4L24 26.8 17.8 31l2.4-7.4L14 19.2h7.8z" fill="#fff"/>')
+    };
+
+    function icon(bg, inner) {
+      return `<svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="${bg}"/>${inner}</svg>`;
+    }
+
+    const DEFAULT_CARDS = [
+      { id: "modelscope", name: "魔搭社区", vendor: "ModelScope", icon: "modelscope", quotaText: "尚未读取", unit: "魔粒", balance: null, tokens: null, value: 0, status: "no_activity", account: "未连接扩展", accountNote: "在扩展选项页保存你自己的魔搭访问令牌后，可读取官方魔粒余额。令牌只存在本机，不会进入本页面。", intro: "阿里云模型社区，汇集开源与托管模型。魔粒可用于 API-Inference 等能力。官方按调用次数扣减魔粒；每日额度在登录官方网站时自动到账，没有签到接口。", reward: 0, checkinSupported: false, livePlatform: true },
+      { id: "meeo", name: "Meeo", vendor: "Meeo", icon: "meeo", quotaText: "8600 积分", unit: "积分", balance: 8600, tokens: 7800000, value: 18, status: "claimable", account: "已连接", accountNote: "演示账户", intro: "面向创作与日常对话的模型额度服务，可用积分兑换调用次数。", reward: 2000 },
+      { id: "tongyi", name: "通义灵码", vendor: "阿里云", icon: "tongyi", quotaText: "320 积分", unit: "积分", balance: 320, tokens: 3600000, value: 9, status: "fail_demo", account: "已连接", accountNote: "演示账户 · 此卡用于展示领取失败提示", intro: "阿里云推出的智能编码助手，可在 IDE 中完成补全、修改与问答。", reward: 80 },
+      { id: "officeace", name: "OfficeAce", vendor: "OfficeAce", icon: "officeace", quotaText: "430 积分", unit: "积分", balance: 430, tokens: 1400000, value: 3, status: "claimed", account: "已连接", accountNote: "演示账户", intro: "面向办公场景的 AI 助手，可用积分兑换模型额度。", reward: 0, claimedReward: 100 },
+      { id: "doubao", name: "豆包", vendor: "字节跳动", icon: "doubao", quotaText: "200 额度", unit: "额度", balance: 200, tokens: 1500000, value: 15, status: "official", account: "示例账户", accountNote: "演示数据，未接入官方接口", intro: "字节跳动的大模型助手，提供对话、创作与开放平台能力。", reward: 0 },
+      { id: "huawei", name: "华为云", vendor: "CodeArts / 盘古", icon: "huawei", quotaText: "200 积分", unit: "积分", balance: 200, tokens: 1200000, value: 12, status: "official", account: "示例账户", accountNote: "演示数据", intro: "华为云盘古与 CodeArts 相关的模型与编程助手额度。", reward: 0 },
+      { id: "minimax", name: "MiniMax", vendor: "MiniMax", icon: "minimax", quotaText: "400 积分", unit: "积分", balance: 400, tokens: 2000000, value: 20, status: "official", account: "示例账户", accountNote: "演示数据", intro: "MiniMax 开放平台与海螺产品的模型积分。", reward: 0 },
+      { id: "qoder", name: "Qoder", vendor: "Qoder", icon: "qoder", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 800000, value: 8, status: "official", account: "示例账户", accountNote: "演示数据", intro: "面向开发者的编程智能体，提供每日免费额度。", reward: 0 },
+      { id: "trae", name: "Trae", vendor: "Trae", icon: "trae", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 600000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "AI 原生的编程工具，可用积分兑换模型调用。", reward: 0 },
+      { id: "workbuddy-cn", name: "WorkBuddy", vendor: "腾讯云", icon: "workbuddy", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 1000000, value: 10, status: "official", tag: "国内版", account: "示例账户", accountNote: "演示数据 · 不调用非公开客户端接口", intro: "腾讯云 WorkBuddy 国内版的积分与成长任务。正式产品只提供官方领取入口。", reward: 0 },
+      { id: "workbuddy-intl", name: "WorkBuddy", vendor: "WorkBuddy", icon: "workbuddyIntl", quotaText: "无签到活动", unit: "", balance: 0, tokens: 0, value: 0, status: "intl", tag: "国际版", account: "示例账户", accountNote: "演示数据", intro: "WorkBuddy 国际版用于查看账户与额度。已确认国际版签到端不存在，因此不提供签到操作。", reward: 0 },
+      { id: "cloudflare", name: "Cloudflare", vendor: "Workers AI", icon: "cloudflare", quotaText: "1万 Neurons", unit: "Neurons", balance: 10000, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "Cloudflare Workers AI 的免费 Neurons 额度，用于运行托管模型。", reward: 0 },
+      { id: "fal", name: "fal", vendor: "fal.ai", icon: "fal", quotaText: "1 次免费", unit: "次", balance: 1, tokens: 200000, value: 2, status: "official", account: "示例账户", accountNote: "演示数据", intro: "面向生成模型的推理平台，提供有限的免费调用次数。", reward: 0 },
+      { id: "ima", name: "ima", vendor: "腾讯 ima", icon: "ima", quotaText: "50 算力", unit: "算力", balance: 50, tokens: 0, value: 0, status: "no_activity", account: "已连接", accountNote: "演示账户", intro: "腾讯推出的知识库与写作助手。今日没有可领取的活动。", reward: 0 },
+      { id: "jimeng", name: "即梦", vendor: "即梦 AI", icon: "jimeng", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 700000, value: 7, status: "need_auth", account: "待授权", accountNote: "演示状态 · 尚未完成授权", intro: "图像与视频生成工具，授权完成后才可在正式版中走官方允许的领取方式。", reward: 0 },
+      { id: "astudio", name: "AStudio", vendor: "AStudio", icon: "astudio", quotaText: "50 积分", unit: "积分", balance: 50, tokens: 400000, value: 4, status: "official", account: "示例账户", accountNote: "演示数据", intro: "模型应用工作室，提供可用于体验的积分。", reward: 0 },
+      { id: "zhipu", name: "智谱清言", vendor: "智谱 AI", icon: "zhipu", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 600000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "智谱 AI 的对话助手与开放平台每日免费额度。", reward: 0 },
+      { id: "kimi", name: "Kimi", vendor: "月之暗面", icon: "kimi", quotaText: "50万 tokens", unit: "tokens", balance: 500000, tokens: 500000, value: 8, status: "official", account: "示例账户", accountNote: "演示数据", intro: "月之暗面的长上下文助手，提供每日免费 tokens。", reward: 0 },
+      { id: "siliconflow", name: "硅基流动", vendor: "SiliconFlow", icon: "siliconflow", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "开源模型聚合推理平台的每日免费额度。", reward: 0 },
+      { id: "elevenlabs", name: "ElevenLabs", vendor: "ElevenLabs", icon: "elevenlabs", quotaText: "1万 字符", unit: "字符", balance: 10000, tokens: 0, value: 3, status: "official", account: "示例账户", accountNote: "演示数据", intro: "语音合成平台的免费字符额度。价值按官方套餐价粗算，不按 token 计。", reward: 0 },
+      { id: "edgeone", name: "EdgeOne", vendor: "腾讯云", icon: "edgeone", quotaText: "33 积分", unit: "积分", balance: 33, tokens: 400000, value: 4, status: "official", account: "示例账户", accountNote: "演示数据", intro: "腾讯云 EdgeOne 的体验积分。", reward: 0 },
+      { id: "cline", name: "Cline", vendor: "Cline", icon: "cline", quotaText: "月额度", unit: "月额度", balance: 1, tokens: 500000, value: 5, status: "need_auth", account: "待授权", accountNote: "演示状态 · 尚未完成授权", intro: "开源编程智能体。需先完成授权，正式版才会考虑读取官方允许的余额接口。", reward: 0 },
+      { id: "huoshan", name: "火山方舟", vendor: "火山引擎", icon: "huoshan", quotaText: "100 积分", unit: "积分", balance: 100, tokens: 800000, value: 6, status: "official", account: "示例账户", accountNote: "演示数据", intro: "火山引擎的模型服务平台，提供可用于体验的额度。", reward: 0 },
+      { id: "spark", name: "讯飞星火", vendor: "科大讯飞", icon: "spark", quotaText: "日额度", unit: "日额度", balance: 1, tokens: 500000, value: 5, status: "official", account: "示例账户", accountNote: "演示数据", intro: "科大讯飞星火大模型的每日免费额度。", reward: 0 }
+    ];
+
+    const BADGE_TEXT = {
+      claimable: "可领取",
+      claimed: "已领取",
+      official: "去官方",
+      need_auth: "需授权",
+      no_activity: "无活动",
+      intl: "国际版",
+      fail_demo: "可领取",
+      failed: "失败"
+    };
+
+    let cards = [];
+    let activeId = null;
+    const busyIds = new Set(); // 正在签到中的卡片 id（每张卡各自独立）
+    let batchRunning = false;  // 批量领取进行中，防止重复触发
+    let epoch = 0;             // 每次重置 +1，让重置前发起的异步任务自动作废
+    let lastBanner = null; // {id, type, text}
+    const PAGE_SOURCE = "saibo-lingjidan-page";
+    const EXT_SOURCE = "saibo-lingjidan-extension";
+    const UNREAD_LABEL = "尚未读取";
+    const NO_OFFICIAL_PRICE = "暂无官方价，不估值";
+    let extState = { connected: false, version: null, keys: {} };
+    let rateTable = null;
+    let fixtureMode = false;
+
+    function callExtension(type, payload, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const id = (crypto.randomUUID && crypto.randomUUID()) || (String(Date.now()) + Math.random());
+        const timer = setTimeout(() => {
+          window.removeEventListener("message", onMsg);
+          reject(new Error("扩展未响应"));
+        }, timeoutMs || 8000);
+        function onMsg(e) {
+          if (e.source !== window) return;
+          const d = e.data;
+          if (!d || d.source !== EXT_SOURCE || d.id !== id) return;
+          window.removeEventListener("message", onMsg);
+          clearTimeout(timer);
+          if (d.ok) resolve(d.result);
+          else reject(new Error(d.error || "扩展返回失败"));
+        }
+        window.addEventListener("message", onMsg);
+        window.postMessage({ source: PAGE_SOURCE, id, type, payload: payload || {} }, window.location.origin || "*");
+      });
+    }
+
+    async function connectExtension() {
+      try {
+        const result = await callExtension("ping", {}, 1500);
+        extState = { connected: true, version: result.version, keys: result.keys || {} };
+        try { rateTable = await callExtension("getRates"); } catch (e) { /* ignore */ }
+        return true;
+      } catch (e) {
+        extState = { connected: false, version: null, keys: {} };
+        return false;
+      }
+    }
+
+    async function loadRatesFallback() {
+      if (rateTable) return rateTable;
+      const urls = ["../rates/rates.json", "/rates/rates.json", "./rates.json"];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (json && json.platforms) {
+            rateTable = json;
+            return rateTable;
+          }
+        } catch (e) { /* try next */ }
+      }
+      return null;
+    }
+
+
+    async function loadDealApi() {
+      if (dealApi) return dealApi;
+      const urls = ["../deals/deals.js", "/deals/deals.js", "./deals.js"];
+      for (const url of urls) {
+        try {
+          const mod = await import(url);
+          if (mod && typeof mod.loadDealTable === "function") {
+            dealApi = mod;
+            return dealApi;
+          }
+        } catch (e) { /* try next */ }
+      }
+      return null;
+    }
+
+    async function loadDeals() {
+      const api = await loadDealApi();
+      const urls = ["../deals/deals.json", "/deals/deals.json", "./deals.json"];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url, { cache: "no-cache" });
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (api) {
+            const table = api.loadDealTable(json);
+            dealItems = table.deals;
+          } else if (Array.isArray(json.deals)) {
+            dealItems = json.deals.map((d) => ({ ...d, status: d.endAt ? "进行中" : "进行中" }));
+          } else {
+            continue;
+          }
+          dealsLoaded = true;
+          loadDealMarks();
+          renderDealFilters();
+          renderDealGrid();
+          maybeOpenDealFromQuery();
+          return;
+        } catch (e) { /* try next */ }
+      }
+      dealsLoaded = true;
+      dealItems = [];
+      renderDealFilters();
+      renderDealGrid();
+    }
+
+    function loadDealMarks() {
+      if (freshRequested()) {
+        dealMarks = { claimed: {}, skipped: {} };
+        return;
+      }
+      try {
+        const raw = localStorage.getItem(DEAL_STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        dealMarks = {
+          claimed: saved && saved.claimed && typeof saved.claimed === "object" ? saved.claimed : {},
+          skipped: saved && saved.skipped && typeof saved.skipped === "object" ? saved.skipped : {}
+        };
+      } catch (e) {
+        dealMarks = { claimed: {}, skipped: {} };
+      }
+    }
+
+    function saveDealMarks() {
+      try { localStorage.setItem(DEAL_STORAGE_KEY, JSON.stringify(dealMarks)); } catch (e) {}
+    }
+
+    function dealMark(id) {
+      if (dealMarks.claimed[id]) return "claimed";
+      if (dealMarks.skipped[id]) return "skipped";
+      return "";
+    }
+
+    function setDealMark(id, kind) {
+      const current = dealMark(id);
+      if (kind === "claimed") {
+        if (current === "claimed") delete dealMarks.claimed[id];
+        else { dealMarks.claimed[id] = true; delete dealMarks.skipped[id]; }
+      } else if (kind === "skipped") {
+        if (current === "skipped") delete dealMarks.skipped[id];
+        else { dealMarks.skipped[id] = true; delete dealMarks.claimed[id]; }
+      }
+      saveDealMarks();
+      renderDealGrid();
+      if (activeId === "deal:" + id) {
+        const deal = dealItems.find((d) => d.id === id);
+        if (deal) renderDealDrawer(deal);
+      }
+    }
+
+    function renderDealFilters() {
+      const typeBox = document.getElementById("dealTypeChips");
+      const regionBox = document.getElementById("dealRegionChips");
+      if (!typeBox || !regionBox) return;
+      typeBox.innerHTML = DEAL_TYPE_FILTERS.map((t) =>
+        `<button type="button" class="deal-chip${dealFilterType === t ? " is-on" : ""}" data-deal-type="${t}">${t}</button>`
+      ).join("");
+      regionBox.innerHTML = DEAL_REGION_FILTERS.map((t) =>
+        `<button type="button" class="deal-chip${dealFilterRegion === t ? " is-on" : ""}" data-deal-region="${t}">${t}</button>`
+      ).join("");
+    }
+
+    function visibleDeals() {
+      return dealItems.filter((d) => {
+        if (dealFilterType !== "全部" && d.type !== dealFilterType) return false;
+        if (dealFilterRegion !== "全部" && d.region !== dealFilterRegion) return false;
+        if (hideEndedDeals && d.status === "已结束") return false;
+        return true;
+      });
+    }
+
+    function dealIcon(vendor) {
+      const pair = DEAL_ICON_COLORS[vendor] || ["#3d4450", (vendor || "?").slice(0, 1)];
+      return icon(pair[0], `<text x="24" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#fff" font-family="ui-sans-serif,system-ui,sans-serif">${pair[1]}</text>`);
+    }
+
+    function dealBadge(deal) {
+      const mark = dealMark(deal.id);
+      if (mark === "claimed") return { cls: "claimed", text: "已领" };
+      if (mark === "skipped") return { cls: "skipped", text: "已略过" };
+      if (deal.status === "即将结束") return { cls: "ending", text: "将结束" };
+      if (deal.status === "已结束") return { cls: "ended", text: "已结束" };
+      return { cls: "ongoing", text: "进行中" };
+    }
+
+    function dealDeadlineText(deal) {
+      if (dealApi && typeof dealApi.formatDeadline === "function") return dealApi.formatDeadline(deal);
+      return deal.endAt ? String(deal.endAt) : "截止时间未知";
+    }
+
+    function renderDealGrid() {
+      const grid = document.getElementById("dealGrid");
+      const meta = document.getElementById("dealsMeta");
+      if (!grid) return;
+      const list = visibleDeals();
+      if (meta) {
+        const total = dealItems.length;
+        const shown = list.length;
+        meta.textContent = dealsLoaded
+          ? (total ? `${shown} / ${total} 条 · 已核验官方来源` : "暂无活动")
+          : "加载中…";
+      }
+      if (!list.length) {
+        grid.innerHTML = `<p class="deal-note" style="margin:8px 4px">${dealsLoaded ? "没有符合筛选条件的活动。" : "正在加载活动…"}</p>`;
+        return;
+      }
+      grid.innerHTML = list.map((d) => {
+        const badge = dealBadge(d);
+        const mark = dealMark(d.id);
+        const st = mark === "claimed" ? "claimed" : mark === "skipped" ? "skipped" : (d.status === "已结束" ? "ended" : d.status === "即将结束" ? "ending" : "ongoing");
+        const deadline = dealDeadlineText(d);
+        return `<button type="button" class="card deal-card is-${st}${activeId === "deal:" + d.id ? " is-active" : ""}" data-deal-id="${escapeHtml(d.id)}" aria-label="${escapeHtml(d.vendor)}，${escapeHtml(d.title)}，${escapeHtml(badge.text)}">
+          <span class="card-icon">${dealIcon(d.vendor)}</span>
+          <span class="card-main">
+            <div class="card-vendor">${escapeHtml(d.vendor)} · ${escapeHtml(d.type)} · ${escapeHtml(d.region)}</div>
+            <div class="card-name">${escapeHtml(d.title)}</div>
+            <div class="card-quota">${escapeHtml(d.summary)}</div>
+            <div class="card-quota">${escapeHtml(deadline)}</div>
+          </span>
+          <span class="badge badge-${badge.cls}">${badge.text}</span>
+        </button>`;
+      }).join("");
+    }
+
+    let popoverAnchor = null;
+
+    function cssAttr(value) {
+      return String(value).replace(/[^a-zA-Z0-9._:-]/g, "");
+    }
+
+    function findAnchorEl() {
+      if (!activeId) return null;
+      if (String(activeId).startsWith("deal:")) {
+        return document.querySelector('[data-deal-id="' + cssAttr(String(activeId).slice(5)) + '"]');
+      }
+      return document.querySelector('[data-id="' + cssAttr(activeId) + '"]');
+    }
+
+    function placePopover() {
+      const drawer = document.getElementById("drawer");
+      const overlay = document.getElementById("overlay");
+      if (!overlay || !drawer || !overlay.classList.contains("is-open")) return;
+      const gap = 8;
+      const margin = 12;
+      const anchor = (popoverAnchor && document.contains(popoverAnchor)) ? popoverAnchor : findAnchorEl();
+      if (anchor) popoverAnchor = anchor;
+      const rect = anchor ? anchor.getBoundingClientRect() : null;
+      const dw = drawer.offsetWidth;
+      const dh = drawer.offsetHeight;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let left, top, origin;
+
+      if (vw < 640) {
+        left = Math.max(margin, (vw - dw) / 2);
+        if (rect && rect.bottom + gap + dh <= vh - margin) {
+          top = rect.bottom + gap;
+          origin = "top center";
+        } else if (rect && rect.top - gap - dh >= margin) {
+          top = rect.top - gap - dh;
+          origin = "bottom center";
+        } else {
+          top = Math.max(margin, vh - dh - margin);
+          origin = "bottom center";
+        }
+      } else if (rect) {
+        const canRight = rect.right + gap + dw <= vw - margin;
+        const canLeft = rect.left - gap - dw >= margin;
+        if (canRight) {
+          left = rect.right + gap;
+          origin = "top left";
+        } else if (canLeft) {
+          left = rect.left - gap - dw;
+          origin = "top right";
+        } else {
+          left = Math.min(Math.max(margin, rect.left), vw - dw - margin);
+          origin = "top center";
+        }
+        top = rect.top;
+        if (top + dh > vh - margin) top = vh - margin - dh;
+        if (top < margin) top = margin;
+        if (!canRight && !canLeft) {
+          if (rect.bottom + gap + dh <= vh - margin) {
+            top = rect.bottom + gap;
+            origin = "top center";
+          } else if (rect.top - gap - dh >= margin) {
+            top = rect.top - gap - dh;
+            origin = "bottom center";
+          }
+        }
+      } else {
+        left = Math.max(margin, (vw - dw) / 2);
+        top = Math.max(margin, (vh - dh) / 3);
+        origin = "center center";
+      }
+      left = Math.min(Math.max(margin, left), Math.max(margin, vw - dw - margin));
+      top = Math.min(Math.max(margin, top), Math.max(margin, vh - dh - margin));
+      drawer.style.left = Math.round(left) + "px";
+      drawer.style.top = Math.round(top) + "px";
+      drawer.style.transformOrigin = origin;
+    }
+
+    function showPopover(anchorEl) {
+      if (anchorEl) popoverAnchor = anchorEl;
+      else popoverAnchor = findAnchorEl();
+      if (popoverAnchor && typeof popoverAnchor.scrollIntoView === "function") {
+        const r = popoverAnchor.getBoundingClientRect();
+        if (r.bottom < 64 || r.top > window.innerHeight - 64) {
+          popoverAnchor.scrollIntoView({ block: "nearest" });
+        }
+      }
+      const overlay = document.getElementById("overlay");
+      overlay.classList.add("is-open");
+      overlay.setAttribute("aria-hidden", "false");
+      placePopover();
+      requestAnimationFrame(placePopover);
+    }
+
+    function openDealDrawer(id, anchorEl) {
+      const deal = dealItems.find((d) => d.id === id);
+      if (!deal) return;
+      activeId = "deal:" + id;
+      renderGrid();
+      renderDealGrid();
+      renderDealDrawer(deal);
+      showPopover(anchorEl);
+    }
+
+    function renderDealDrawer(deal) {
+      const drawer = document.getElementById("drawer");
+      const mark = dealMark(deal.id);
+      const deadline = dealDeadlineText(deal);
+      const startText = deal.startAt ? String(deal.startAt) : "未公布";
+      const endText = deal.endAt ? String(deal.endAt) : "截止时间未知";
+      const claimedOn = mark === "claimed";
+      const skippedOn = mark === "skipped";
+      drawer.innerHTML = `
+        <div class="drawer-head">
+          <span class="card-icon">${dealIcon(deal.vendor)}</span>
+          <div class="drawer-titles">
+            <h2 id="drawerTitle">${escapeHtml(deal.title)}</h2>
+            <p>${escapeHtml(deal.vendor)} · ${escapeHtml(deal.type)} · ${escapeHtml(deal.region)}</p>
+          </div>
+          <button class="icon-btn" type="button" id="closeDrawer" aria-label="关闭">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <div class="banner banner-info">活动信息可能变化，领取前请以官方页面为准。本站不提供返利或邀请链接。</div>
+          <div class="block">
+            <h3>权益说明</h3>
+            <p class="intro">${escapeHtml(deal.summary)}</p>
+          </div>
+          <div class="block">
+            <h3>门槛与条件</h3>
+            <p class="intro">${escapeHtml(deal.conditions || "以官方页为准")}</p>
+          </div>
+          <div class="block">
+            <h3>活动信息</h3>
+            <div class="facts">
+              <div class="fact"><span class="k">状态</span><span class="v">${escapeHtml(deal.status)}</span></div>
+              <div class="fact"><span class="k">截止</span><span class="v">${escapeHtml(deadline)}<small>${escapeHtml(endText)}</small></span></div>
+              <div class="fact"><span class="k">开始</span><span class="v">${escapeHtml(startText)}</span></div>
+              <div class="fact"><span class="k">核实于</span><span class="v">${escapeHtml(deal.verifiedAt)}</span></div>
+            </div>
+          </div>
+          <div class="block">
+            <h3>官方来源</h3>
+            <p class="intro"><a class="drawer-link" href="${escapeHtml(deal.sourceUrl)}" target="_blank" rel="noopener noreferrer">打开官方说明页</a></p>
+          </div>
+        </div>
+        <div class="drawer-foot" id="drawerFoot">
+          <button class="primary" type="button" data-act="dealOfficial">去官方领取</button>
+          <div class="mark-row">
+            <button class="secondary${claimedOn ? " is-on" : ""}" type="button" data-act="dealClaimed">${claimedOn ? "取消已领" : "已领"}</button>
+            <button class="ghost${skippedOn ? " is-on" : ""}" type="button" data-act="dealSkipped">${skippedOn ? "取消不感兴趣" : "不感兴趣"}</button>
+          </div>
+        </div>
+      `;
+      document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
+      document.getElementById("drawerFoot").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-act]");
+        if (!btn) return;
+        const act = btn.getAttribute("data-act");
+        if (act === "dealOfficial") {
+          window.open(deal.officialEntryUrl, "_blank", "noopener,noreferrer");
+          toast("已打开官方领取页", "ok");
+        }
+        if (act === "dealClaimed") setDealMark(deal.id, "claimed");
+        if (act === "dealSkipped") setDealMark(deal.id, "skipped");
+      });
+      if (document.getElementById("overlay").classList.contains("is-open")) requestAnimationFrame(placePopover);
+    }
+
+    function maybeOpenDealFromQuery() {
+      const params = new URLSearchParams(location.search);
+      const openParam = params.get("open") || "";
+      let dealId = params.get("deal") || "";
+      if (!dealId && openParam.startsWith("deal:")) dealId = openParam.slice(5);
+      if (!dealId && openParam && !cards.some((c) => c.id === openParam)) dealId = openParam;
+      if (dealId && dealItems.some((d) => d.id === dealId)) openDealDrawer(dealId);
+    }
+
+    function getPlatformRate(id) {
+      return rateTable && rateTable.platforms ? rateTable.platforms[id] || null : null;
+    }
+
+    function applyModelscopeShell() {
+      const card = cards.find((c) => c.id === "modelscope");
+      if (!card) return card;
+      card.status = "no_activity";
+      card.checkinSupported = false;
+      card.livePlatform = true;
+      card.reward = 0;
+      card.value = 0;
+      card.tokens = null;
+      if (extState.connected && extState.keys.modelscope) {
+        card.account = "已连接";
+        card.accountNote = "已在扩展中保存访问令牌。令牌不会进入本页面。点击「读取余额」将调用官方 OpenAPI。";
+      } else if (extState.connected) {
+        card.account = "已连接扩展 · 未配置令牌";
+        card.accountNote = "请在扩展选项页保存你自己的魔搭访问令牌。令牌只存在本机。";
+      } else {
+        card.account = "未连接扩展";
+        card.accountNote = "加载未打包扩展并保存访问令牌后，可读取官方魔粒余额。未连接时不会向魔搭发送请求。";
+      }
+      if (card.balance == null) {
+        card.quotaText = UNREAD_LABEL;
+        card.balanceSource = "unread";
+      }
+      return card;
+    }
+
+    function applyBalanceToCard(card, payload) {
+      const balance = payload && payload.balance ? payload.balance : payload;
+      const estimate = payload && payload.estimate ? payload.estimate : null;
+      if (!balance) return;
+      card.balance = typeof balance.points === "number" ? balance.points : null;
+      card.unit = balance.unit || card.unit;
+      card.expiresAt = balance.expiresAt || null;
+      card.updatedAt = balance.updatedAt || null;
+      card.balanceSource = balance.source || "unread";
+      card.balanceMessage = balance.message || "";
+      card.balanceMeta = balance.meta || null;
+      card.quotaText = card.balance == null ? UNREAD_LABEL : formatBalance(card, card.balance);
+      if (estimate && estimate.ok) {
+        card.tokens = estimate.tokens;
+        card.value = estimate.cny || 0;
+        card.estimateReason = null;
+      } else {
+        card.tokens = null;
+        card.value = 0;
+        card.estimateReason = (estimate && estimate.reason) || NO_OFFICIAL_PRICE;
+      }
+    }
+
+    function applyModelscopeFixture() {
+      fixtureMode = true;
+      const card = applyModelscopeShell();
+      if (!card) return;
+      applyBalanceToCard(card, {
+        balance: {
+          points: 998.5,
+          unit: "魔粒",
+          expiresAt: null,
+          updatedAt: new Date().toISOString(),
+          source: "official_fixture",
+          message: "这是官方 OpenAPI 文档中的示例响应，不是你的真实账户余额。",
+          meta: { total_balance: 1000, available_balance: 998.5, frozen_amount: 1.5, request_id: "c55709d2-4e09-4bd8-be84-d8518bc46363" }
+        },
+        estimate: { ok: false, reason: NO_OFFICIAL_PRICE, tokens: null, cny: null }
+      });
+      lastBanner = {
+        id: "modelscope",
+        type: "info",
+        keep: true,
+        html: "<b>官方文档夹具</b> · 余额 998.5 魔粒来自 OpenAPI 示例（available_balance），不是真实账户。扩展未使用任何访问令牌。"
+      };
+    }
+
+    function updateExtChip() {
+      const chip = document.getElementById("extChip");
+      if (!chip) return;
+      if (fixtureMode && !extState.connected) {
+        chip.textContent = "夹具演示";
+        chip.className = "chip ext is-on";
+        chip.title = "正在使用官方 OpenAPI 文档中的示例响应，未请求真实账户。";
+        return;
+      }
+      if (extState.connected) {
+        const key = extState.keys && extState.keys.modelscope;
+        chip.textContent = key ? "扩展已连接" : "扩展已连接 · 未配置令牌";
+        chip.className = "chip ext is-on";
+        chip.title = key ? "可通过官方接口读取魔搭余额。令牌留在扩展里。" : "扩展已连接，但尚未在选项页保存魔搭访问令牌。";
+      } else {
+        chip.textContent = "扩展未连接";
+        chip.className = "chip ext is-off";
+        chip.title = "未连接扩展时，魔搭不会向官方接口请求。其他卡片仍为演示数据。";
+      }
+    }
+
+    function freshRequested() {
+      const q = new URLSearchParams(location.search);
+      return q.has("fresh");
+    }
+
+    function loadState() {
+      cards = DEFAULT_CARDS.map((c) => ({ ...c }));
+      if (freshRequested()) return;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (!saved || !Array.isArray(saved.cards)) return;
+        const map = new Map();
+        for (const s of saved.cards) {
+          if (s && typeof s === "object" && typeof s.id === "string") map.set(s.id, s);
+        }
+        cards = cards.map((c) => (map.has(c.id) ? { ...c, ...pickState(map.get(c.id), c) } : c));
+      } catch (e) { /* ignore broken state */ }
+    }
+
+    // 只接受“这张卡合理能走到的”状态，其余一律忽略，避免坏数据让页面出现 undefined 或错误金额
+    const CLAIMABLE_DEFAULTS = ["claimable", "fail_demo"];
+    function pickState(s, def) {
+      const out = {};
+      if (def.livePlatform) {
+        if (s.balance === null) out.balance = null;
+        if (typeof s.balance === "number" && isFinite(s.balance) && s.balance >= 0 && s.balance <= 1e12) out.balance = s.balance;
+        if (typeof s.quotaText === "string" && s.quotaText.length <= 40) out.quotaText = s.quotaText;
+        if (typeof s.updatedAt === "string" && s.updatedAt.length <= 40) out.updatedAt = s.updatedAt;
+        if (typeof s.balanceSource === "string" && s.balanceSource.length <= 40) out.balanceSource = s.balanceSource;
+        if (s.balanceMeta && typeof s.balanceMeta === "object") out.balanceMeta = s.balanceMeta;
+        if (typeof s.estimateReason === "string") out.estimateReason = s.estimateReason.slice(0, 80);
+        return out;
+      }
+      if (CLAIMABLE_DEFAULTS.includes(def.status) && ["claimable", "fail_demo", "claimed", "failed"].includes(s.status)) out.status = s.status;
+      if (typeof s.balance === "number" && isFinite(s.balance) && s.balance >= 0 && s.balance <= 1e12) out.balance = s.balance;
+      if (typeof s.quotaText === "string" && s.quotaText.length <= 40) out.quotaText = s.quotaText;
+      if (typeof s.claimedReward === "number" && isFinite(s.claimedReward) && s.claimedReward >= 0 && s.claimedReward <= 1e12) out.claimedReward = s.claimedReward;
+      return out;
+    }
+
+    function saveState() {
+      const payload = {
+        cards: cards.map((c) => ({
+          id: c.id,
+          status: c.status,
+          balance: c.balance,
+          quotaText: c.quotaText,
+          claimedReward: c.claimedReward || 0,
+          updatedAt: c.updatedAt || null,
+          balanceSource: c.balanceSource || null,
+          balanceMeta: c.balanceMeta || null,
+          estimateReason: c.estimateReason || null
+        }))
+      };
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
+    }
+
+    function money(n) {
+      const v = Math.round(n * 100) / 100;
+      return Number.isInteger(v) ? String(v) : v.toFixed(2);
+    }
+
+    function formatTokens(n) {
+      if (!n) return "不适用 / 未估算";
+      if (n >= 10000) return "约 " + (Math.round(n / 1000) / 10) + " 万 tokens";
+      return "约 " + n.toLocaleString("zh-CN") + " tokens";
+    }
+
+    function stillClaimValue(c) {
+      return ["claimable", "fail_demo", "failed", "official", "need_auth"].includes(c.status);
+    }
+    function isInAppPending(c) {
+      return c.status === "claimable" || c.status === "fail_demo";
+    }
+    function isAuthorizedClaimable(c) {
+      return c.status === "claimable" || c.status === "fail_demo";
+    }
+
+    function totals() {
+      let today = 0, inApp = 0, outApp = 0, month = MONTH_BASE;
+      for (const c of cards) {
+        if (stillClaimValue(c)) {
+          today += c.value;
+          if (isInAppPending(c) || c.status === "failed") inApp += c.value;
+          else outApp += c.value;
+        }
+        if (c.status === "claimed") month += c.value;
+      }
+      return { today, inApp, outApp, month };
+    }
+
+    function renderSummary() {
+      const t = totals();
+      document.getElementById("todayAmount").innerHTML = "<em>¥</em>" + money(t.today);
+      document.getElementById("inAppValue").textContent = "¥" + money(t.inApp);
+      document.getElementById("outAppValue").textContent = "¥" + money(t.outApp);
+      document.getElementById("monthAmount").textContent = "¥" + money(t.month);
+      const n = cards.filter(isAuthorizedClaimable).length;
+      const btn = document.getElementById("batchBtn");
+      btn.disabled = n === 0;
+      btn.textContent = n ? "领取今日已授权项（" + n + "）" : "今日已授权项已领完";
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById("grid");
+      const claimableCount = cards.filter((c) => c.status === "claimable" || c.status === "fail_demo").length;
+      const liveNote = extState.connected ? "魔搭可走官方接口" : (fixtureMode ? "魔搭为官方文档夹具" : "魔搭未读取官方余额");
+      document.getElementById("albumMeta").textContent =
+        cards.length + " 张 · " + claimableCount + " 张可站内领取 · " + liveNote;
+      grid.innerHTML = cards.map((c) => {
+        const st = c.status === "fail_demo" ? "claimable" : c.status;
+        const badgeClass = "badge badge-" + (c.status === "fail_demo" ? "claimable" : c.status);
+        return `<button type="button" class="card is-${st}${activeId === c.id ? " is-active" : ""}" data-id="${c.id}" aria-label="${c.name}，${BADGE_TEXT[c.status] || ""}">
+          <div class="card-icon">${ICONS[c.icon]}</div>
+          <div class="card-main">
+            <div class="card-name">${escapeHtml(c.name)}</div>
+            <div class="card-quota${c.balance == null ? " is-unread" : ""}">${escapeHtml(c.quotaText)}${c.tag ? `<span class="card-tag">${escapeHtml(c.tag)}</span>` : ""}</div>
+          </div>
+          <span class="${badgeClass}">${BADGE_TEXT[c.status]}</span>
+        </button>`;
+      }).join("");
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function accountDot(status, account) {
+      if (account === "已连接") return '<span class="dot"></span>已连接';
+      if (account === "待授权") return '<span class="dot warn"></span>待授权';
+      return '<span class="dot muted"></span>' + escapeHtml(account);
+    }
+
+    function renderDrawer(card, opts) {
+      opts = opts || {};
+      const banner = lastBanner && lastBanner.id === card.id ? lastBanner : null;
+      let bannerHtml = "";
+      if (banner) {
+        const cls = banner.type === "ok" ? "banner-ok" : banner.type === "err" ? "banner-err" : "banner-info";
+        bannerHtml = `<div class="banner ${cls}" id="resultBanner">${banner.html}</div>`;
+      } else if (card.status === "intl") {
+        bannerHtml = `<div class="banner banner-info">国际版签到端不存在，因此不提供站内签到或官方签到跳转。账户信息仅供查看。</div>`;
+      } else if (card.id === "modelscope") {
+        bannerHtml = `<div class="banner banner-info">魔搭没有每日签到接口。每日魔粒在登录官方网站时自动到账，本页不会假装领取成功。</div>`;
+      } else if (card.status === "no_activity") {
+        bannerHtml = `<div class="banner banner-info">今日没有可领取的活动。</div>`;
+      } else if (card.status === "claimed") {
+        bannerHtml = `<div class="banner banner-ok"><b>今日已签</b> · 本卡片演示为已经领取。</div>`;
+      }
+
+      const est = estimateDisplay(card);
+      const tokenLine = est.tokenLine;
+
+      const actions = actionButtons(card, opts.busy || busyIds.has(card.id));
+
+      document.getElementById("drawer").innerHTML = `
+        <div class="drawer-head">
+          <div class="card-icon">${ICONS[card.icon]}</div>
+          <div class="drawer-titles">
+            <h2 id="drawerTitle">${escapeHtml(card.name)}</h2>
+            <p>${escapeHtml(card.vendor)}${card.tag ? " · " + escapeHtml(card.tag) : ""}</p>
+          </div>
+          <button class="icon-btn" type="button" id="closeDrawer" aria-label="关闭">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          ${bannerHtml}
+          <div class="block">
+            <h3>产品介绍</h3>
+            <p class="intro">${escapeHtml(card.intro)}</p>
+          </div>
+          <div class="block">
+            <h3>当前账户情况</h3>
+            <div class="facts">
+              <div class="fact"><span class="k">连接状态</span><span class="v">${accountDot(card.status, card.account)}</span></div>
+              <div class="fact"><span class="k">说明</span><span class="v">${escapeHtml(card.accountNote)}</span></div>
+            </div>
+          </div>
+          <div class="block">
+            <h3>积分明细</h3>
+            <div class="facts">
+              <div class="fact"><span class="k">当前余额</span><span class="v${card.balance == null ? " is-unread" : ""}">${escapeHtml(card.quotaText)}</span></div>
+              ${balanceExtraFacts(card)}
+              ${card.reward && card.status !== "claimed" ? `<div class="fact"><span class="k">今日可领</span><span class="v">+${card.reward}${card.unit ? " " + card.unit : ""}</span></div>` : ""}
+              ${card.status === "claimed" && card.claimedReward ? `<div class="fact"><span class="k">今日已领</span><span class="v">+${card.claimedReward}${card.unit ? " " + card.unit : ""}</span></div>` : ""}
+              <div class="fact"><span class="k">领取状态</span><span class="v">${escapeHtml(statusLabel(card))}</span></div>
+            </div>
+          </div>
+          <div class="block">
+            <h3>预估可用 Token / 价值</h3>
+            <div class="facts">
+              <div class="fact"><span class="k">预估 Token</span><span class="v">${escapeHtml(tokenLine)}</span></div>
+              <div class="fact"><span class="k">折合价值</span><span class="v">${est.valueHtml}</span></div>
+            </div>
+            <p class="est-note">${est.note}</p>
+          </div>
+        </div>
+        <div class="drawer-foot" id="drawerFoot">${actions}</div>
+      `;
+      document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
+      bindDrawerActions(card);
+      if (document.getElementById("overlay").classList.contains("is-open")) requestAnimationFrame(placePopover);
+    }
+
+    function sourceLabel(source) {
+      switch (source) {
+        case "official_api": return "官方 OpenAPI";
+        case "official_fixture": return "官方文档示例（夹具）";
+        case "page_read": return "官方页面读取";
+        case "manual": return "手动填写";
+        default: return "尚未读取";
+      }
+    }
+
+    function formatUpdatedAt(iso) {
+      if (!iso) return "";
+      try {
+        const d = new Date(iso);
+        return new Intl.DateTimeFormat("zh-CN", {
+          timeZone: "Asia/Shanghai",
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", second: "2-digit",
+          hour12: false
+        }).format(d) + "（上海时间）";
+      } catch (e) { return iso; }
+    }
+
+    function balanceExtraFacts(card) {
+      if (!card.livePlatform && card.id !== "modelscope") return "";
+      let html = "";
+      const meta = card.balanceMeta || {};
+      if (typeof meta.total_balance === "number") {
+        html += `<div class="fact"><span class="k">总额度</span><span class="v">${escapeHtml(String(meta.total_balance))} ${escapeHtml(card.unit || "")}</span></div>`;
+      }
+      if (typeof meta.frozen_amount === "number") {
+        html += `<div class="fact"><span class="k">预扣额度</span><span class="v">${escapeHtml(String(meta.frozen_amount))} ${escapeHtml(card.unit || "")}</span></div>`;
+      }
+      html += `<div class="fact"><span class="k">来源</span><span class="v">${escapeHtml(sourceLabel(card.balanceSource))}</span></div>`;
+      if (card.updatedAt) {
+        html += `<div class="fact"><span class="k">更新时间</span><span class="v">${escapeHtml(formatUpdatedAt(card.updatedAt))}</span></div>`;
+      }
+      return html;
+    }
+
+    function estimateDisplay(card) {
+      if (card.id === "modelscope" || card.livePlatform) {
+        const rate = getPlatformRate("modelscope");
+        const sourceUrl = (rate && rate.officialBilling && rate.officialBilling.sourceUrl) || "https://modelscope.cn/posts/435591";
+        return {
+          tokenLine: NO_OFFICIAL_PRICE,
+          valueHtml: escapeHtml(NO_OFFICIAL_PRICE),
+          note: `魔搭官方按调用次数扣减魔粒（轻量 0.5、主流 1、旗舰 2 魔粒/次），不按 Token 计价，因此不估算人民币价值。来源：<a href="${sourceUrl}" target="_blank" rel="noopener noreferrer">魔粒体系说明</a>（2026-08-10）。`
+        };
+      }
+      const tokenLine = card.tokens
+        ? formatTokens(card.tokens)
+        : (card.unit === "字符" ? "语音字符额度，不按 token 估算" : "本演示未给出 token 估算");
+      return {
+        tokenLine,
+        valueHtml: "¥" + money(card.value) + "<small>按官方价的演示估算</small>",
+        note: "以上数字全部为虚构的演示估算，按该平台公开标价粗算，不能当作真实账户余额或收益。"
+      };
+    }
+
+    function statusLabel(c) {
+
+      switch (c.status) {
+        case "no_activity":
+          return c.id === "modelscope" ? "无每日签到（登录官方网站后自动到账）" : "今日无活动";
+        case "claimable":
+        case "fail_demo": return "今日可领取（已授权，可站内执行）";
+        case "claimed": return "今日已签";
+        case "official": return "需前往官方领取";
+        case "need_auth": return "需授权后才可一键领取";
+        case "intl": return "国际版不适用签到";
+        case "failed": return "最近一次演示领取失败";
+        default: return c.status;
+      }
+    }
+
+    function actionButtons(card, busy) {
+      if (card.id === "modelscope" || card.livePlatform) {
+        let html = `<button class="primary is-idle" type="button" disabled>无每日签到</button>`;
+        if (busy) {
+          html += `<button class="secondary is-busy" type="button" disabled><span class="spin"></span>读取中…</button>`;
+        } else if (extState.connected && extState.keys.modelscope) {
+          html += `<button class="secondary" type="button" data-act="readBalance">读取余额</button>`;
+        } else if (extState.connected) {
+          html += `<button class="secondary" type="button" data-act="openOptions">配置访问令牌</button>`;
+        } else if (fixtureMode) {
+          html += `<p class="est-note" style="text-align:center;margin:0">当前显示官方文档夹具。加载扩展并保存令牌后，可读取真实余额。</p>`;
+        } else {
+          html += `<button class="secondary" type="button" data-act="connectHelp">如何连接扩展</button>`;
+        }
+        html += `<button class="ghost" type="button" data-act="openUsage">打开官方魔粒页</button>`;
+        return html;
+      }
+      if (card.status === "intl") {
+        return `<button class="primary is-idle" type="button" disabled>国际版无签到</button>
+                <p class="est-note" style="text-align:center;margin:0">不提供可点击的站内签到按钮。</p>`;
+      }
+      if (card.status === "no_activity") {
+        return `<button class="primary is-idle" type="button" disabled>今日无活动</button>`;
+      }
+      if (card.status === "claimed") {
+        return `<button class="primary is-done" type="button" disabled>今日已签</button>`;
+      }
+      if (card.status === "official") {
+        return `<button class="secondary" type="button" data-act="official">去官方领取</button>`;
+      }
+      if (card.status === "need_auth") {
+        return `<button class="secondary" type="button" data-act="auth">需授权后可一键领取</button>`;
+      }
+      if (busy) {
+        return `<button class="primary is-busy" type="button" disabled><span class="spin"></span>签到中…</button>`;
+      }
+      const label = card.status === "failed" ? "重试一键签到" : "一键签到";
+      return `<button class="primary" type="button" data-act="checkin" id="checkinBtn">${label}</button>`;
+    }
+
+    function bindDrawerActions(card) {
+      const foot = document.getElementById("drawerFoot");
+      foot.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-act]");
+        if (!btn) return;
+        const act = btn.getAttribute("data-act");
+        if (act === "checkin") startCheckin(card.id);
+        if (act === "official") openOfficialModal(card);
+        if (act === "auth") openAuthModal(card);
+        if (act === "readBalance") startReadBalance(card.id);
+        if (act === "openOptions") openExtensionOptions();
+        if (act === "openUsage") window.open("https://modelscope.cn/magicube/usage", "_blank", "noopener,noreferrer");
+        if (act === "connectHelp") openConnectHelp();
+      });
+    }
+
+    function openDrawer(id, anchorEl) {
+      if (id && String(id).startsWith("deal:")) {
+        openDealDrawer(String(id).slice(5), anchorEl);
+        return;
+      }
+      const card = cards.find((c) => c.id === id);
+      if (!card) return;
+      activeId = id;
+      renderGrid();
+      renderDealGrid();
+      renderDrawer(card);
+      showPopover(anchorEl);
+    }
+
+    function closeDrawer() {
+      activeId = null;
+      popoverAnchor = null;
+      lastBanner = lastBanner && lastBanner.keep ? lastBanner : null;
+      renderGrid();
+      renderDealGrid();
+      const overlay = document.getElementById("overlay");
+      overlay.classList.remove("is-open");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+
+    function startCheckin(id) {
+      const card = cards.find((c) => c.id === id);
+      if (!card || busyIds.has(id)) return;
+      if (card.id === "modelscope" || card.livePlatform) return; // 不得假装签到成功
+      if (card.status !== "claimable" && card.status !== "fail_demo" && card.status !== "failed") return;
+      busyIds.add(id);
+      const myEpoch = epoch;
+      if (activeId === id) renderDrawer(card, { busy: true });
+      window.setTimeout(() => {
+        if (myEpoch !== epoch) return; // 期间点了“重置演示”，这次签到作废
+        busyIds.delete(id);
+        const current = cards.find((c) => c.id === id);
+        if (!current) return;
+        const showHere = activeId === id;
+        if (current.status !== "claimable" && current.status !== "fail_demo" && current.status !== "failed") {
+          if (showHere) renderDrawer(current); // 已被批量领取处理过，只刷新界面，不重复领
+          return;
+        }
+        if (current.id === "tongyi") {
+          current.status = "failed";
+          lastBanner = {
+            id,
+            type: "err",
+            html: "<b>领取失败</b> · 演示错误：该渠道今日接口暂时不可用。请稍后重试，或改走官方入口。本演示未向任何服务器发送请求。"
+          };
+          saveState();
+          renderSummary();
+          renderGrid();
+          if (showHere) renderDrawer(current);
+          toast("领取失败：通义灵码（演示错误）", "err");
+          return;
+        }
+        const gained = current.reward || current.balance;
+        current.status = "claimed";
+        current.claimedReward = gained;
+        current.balance = current.balance + gained;
+        current.quotaText = formatBalance(current, current.balance);
+        lastBanner = {
+          id,
+          type: "ok",
+          keep: true,
+          html: "<b>已领取 +" + gained + (current.unit ? " " + current.unit : "") + "</b> · 演示成功，已刷新积分与左侧汇总。"
+        };
+        saveState();
+        renderSummary();
+        renderGrid();
+        if (showHere) renderDrawer(current);
+        toast("已领取 +" + gained + (current.unit ? " " + current.unit : ""), "ok");
+      }, 900);
+    }
+
+    function formatBalance(card, n) {
+      if (n == null || typeof n !== "number" || !isFinite(n)) return UNREAD_LABEL;
+      if (card.unit === "Neurons") return (n >= 10000 ? (n / 10000) + "万" : n) + " Neurons";
+      if (card.unit === "tokens") {
+        if (n >= 10000) return (n / 10000) + "万 tokens";
+        return n + " tokens";
+      }
+      return n + (card.unit ? " " + card.unit : "");
+    }
+
+    async function startReadBalance(id) {
+      const card = cards.find((c) => c.id === id);
+      if (!card || busyIds.has(id)) return;
+      if (!extState.connected || !extState.keys.modelscope) {
+        toast("请先在扩展选项页保存访问令牌", "err");
+        return;
+      }
+      busyIds.add(id);
+      const myEpoch = epoch;
+      if (activeId === id) renderDrawer(card, { busy: true });
+      try {
+        const payload = await callExtension("getBalance", { platformId: id }, 12000);
+        if (myEpoch !== epoch) return;
+        const current = cards.find((c) => c.id === id);
+        if (!current) return;
+        applyBalanceToCard(current, payload);
+        applyModelscopeShell();
+        const showHere = activeId === id;
+        if (current.balance == null) {
+          lastBanner = { id, type: "err", html: "<b>尚未读取</b> · " + escapeHtml((payload.balance && payload.balance.message) || "官方接口没有返回可用余额。未读取不等于 0。") };
+          toast(current.balanceMessage || "尚未读取到余额", "err");
+        } else {
+          lastBanner = {
+            id,
+            type: "ok",
+            keep: true,
+            html: "<b>已读取官方余额 " + escapeHtml(current.quotaText) + "</b> · 来源：官方 OpenAPI。令牌未进入本页面。"
+          };
+          toast("已读取 " + current.quotaText, "ok");
+        }
+        busyIds.delete(id);
+        saveState();
+        renderSummary();
+        renderGrid();
+        if (showHere) renderDrawer(current);
+      } catch (err) {
+        busyIds.delete(id);
+        if (myEpoch !== epoch) return;
+        const current = cards.find((c) => c.id === id) || card;
+        lastBanner = { id, type: "err", html: "<b>读取失败</b> · " + escapeHtml(err.message || "扩展未响应") };
+        toast("读取失败", "err");
+        if (activeId === id) renderDrawer(current);
+      }
+    }
+
+    async function openExtensionOptions() {
+      try {
+        await callExtension("openOptions");
+        toast("已打开扩展设置", "ok");
+      } catch (err) {
+        openConnectHelp();
+      }
+    }
+
+    function openConnectHelp() {
+      showModal({
+        title: "如何连接扩展并读取魔搭余额",
+        body: `<ol>
+          <li>在项目根目录启动静态服务：<code>python3 -m http.server 8080</code>，用浏览器打开 <code>http://localhost:8080/web/</code>。</li>
+          <li>Chrome 打开 <code>chrome://extensions</code>，开启开发者模式，加载 <code>extension/</code> 目录（未打包扩展）。</li>
+          <li>打开扩展选项页，到 <a href="https://modelscope.cn/my/myaccesstoken" target="_blank" rel="noopener noreferrer">魔搭访问令牌页</a> 复制你自己的令牌，保存到本机。</li>
+          <li>回到本页，刷新后点开魔搭卡片，再点「读取余额」。令牌不会进入本页面。</li>
+        </ol>
+        <p style="margin-top:10px">没有令牌时，可在本页加上 <code>?fixture=modelscope</code> 查看官方文档示例余额，不会发起真实请求。</p>`,
+        actions: [{ label: "我知道了", kind: "primary", onClick: hideModal }]
+      });
+    }
+
+    function openOfficialModal(card) {
+      showModal({
+        title: "去官方领取",
+        body: `<p>正式版会跳转到 <b>${escapeHtml(card.name)}</b> 的官方领取页。</p>
+               <p style="margin-top:8px">本演示不会离开当前页面，也不会打开外部网站。这只是交互说明。</p>`,
+        actions: [{ label: "我知道了", kind: "primary", onClick: hideModal }]
+      });
+    }
+
+    function openAuthModal(card) {
+      showModal({
+        title: "需授权后可一键领取",
+        body: `<p><b>${escapeHtml(card.name)}</b> 当前为待授权状态。</p>
+               <p style="margin-top:8px">正式版将引导你完成该平台允许的授权（例如自备 API Key，或官方 OAuth）。本演示不会收集、保存或上传任何凭据。</p>`,
+        actions: [{ label: "我知道了", kind: "primary", onClick: hideModal }]
+      });
+    }
+
+    function openBatchModal() {
+      if (batchRunning) return;
+      const pending = cards.filter(isAuthorizedClaimable);
+      const official = cards.filter((c) => c.status === "official");
+      const auth = cards.filter((c) => c.status === "need_auth");
+      if (!pending.length) {
+        showModal({
+          title: "没有可站内领取的项目",
+          body: "<p>今日已授权项都已处理完毕。其余平台请走官方入口，不会在站内自动签到。</p>",
+          actions: [{ label: "好的", kind: "primary", onClick: hideModal }]
+        });
+        return;
+      }
+      const body = `
+        <p>将尝试领取 <b class="ok">${pending.length}</b> 个已授权且今日可领的项（浏览器内模拟）：</p>
+        <ul>${pending.map((c) => `<li>${escapeHtml(c.name)} · ${escapeHtml(c.quotaText)}</li>`).join("")}</ul>
+        <p style="margin-top:12px">以下平台<b>不会</b>在站内自动签到，需前往官方入口：</p>
+        <ul>${official.map((c) => `<li>${escapeHtml(c.name)}${c.tag ? "（" + escapeHtml(c.tag) + "）" : ""}</li>`).join("")}</ul>
+        ${auth.length ? `<p style="margin-top:12px" class="warn">还需先授权：${auth.map((c) => escapeHtml(c.name)).join("、")}</p>` : ""}
+        <p style="margin-top:12px">本演示不会连接任何平台接口，也不能承诺全平台站内自动签到。</p>`;
+      showModal({
+        title: "领取今日已授权项",
+        body,
+        actions: [
+          { label: "取消", kind: "secondary", onClick: hideModal },
+          { label: "开始领取", kind: "primary", onClick: runBatch }
+        ]
+      });
+    }
+
+    async function runBatch() {
+      hideModal();
+      if (batchRunning) return;
+      batchRunning = true;
+      const myEpoch = epoch;
+      try {
+        await runBatchInner(myEpoch);
+      } finally {
+        if (myEpoch === epoch) batchRunning = false;
+      }
+    }
+
+    async function runBatchInner(myEpoch) {
+      const pending = cards.filter(isAuthorizedClaimable);
+      const results = [];
+      for (const c of pending) {
+        await new Promise((r) => setTimeout(r, 550));
+        if (myEpoch !== epoch) return; // 期间点了“重置演示”，终止本次批量
+        if (!isAuthorizedClaimable(c) || busyIds.has(c.id)) continue; // 已被单独签到处理，或正在处理中
+        if (c.id === "tongyi") {
+          c.status = "failed";
+          results.push({ name: c.name, ok: false, detail: "演示失败：接口暂时不可用" });
+        } else {
+          const gained = c.reward || c.balance;
+          c.status = "claimed";
+          c.claimedReward = gained;
+          c.balance = c.balance + gained;
+          c.quotaText = formatBalance(c, c.balance);
+          results.push({ name: c.name, ok: true, detail: "已领取 +" + gained + (c.unit ? " " + c.unit : "") });
+        }
+        saveState();
+        renderSummary();
+        renderGrid();
+        if (activeId === c.id) {
+          lastBanner = results[results.length - 1].ok
+            ? { id: c.id, type: "ok", keep: true, html: "<b>" + results[results.length - 1].detail + "</b>" }
+            : { id: c.id, type: "err", html: "<b>领取失败</b> · " + results[results.length - 1].detail };
+          renderDrawer(c);
+        }
+      }
+      const ok = results.filter((r) => r.ok);
+      const fail = results.filter((r) => !r.ok);
+      const official = cards.filter((c) => c.status === "official");
+      showModal({
+        title: "批量领取结果",
+        body: `<p>成功 ${ok.length} 项${fail.length ? "，失败 " + fail.length + " 项" : ""}。</p>
+          <ul>${results.map((r) => `<li class="${r.ok ? "ok" : "warn"}">${escapeHtml(r.name)}：${escapeHtml(r.detail)}</li>`).join("")}</ul>
+          <p style="margin-top:12px">仍需走官方入口的平台：${official.map((c) => escapeHtml(c.name)).join("、") || "无"}。</p>`,
+        actions: [{ label: "完成", kind: "primary", onClick: hideModal }]
+      });
+    }
+
+
+    const GUIDE_KEY = "saibo-lingjidan-guide-seen";
+    const GUIDE_BODY = `
+      <p class="guide-lead">赛博领鸡蛋把各平台能免费领的大模型额度收成一张看板，按官方价折成人民币，方便你每天看清还能领什么、值多少。</p>
+      <h3>功能介绍</h3>
+      <ul>
+        <li><b>今天还能领</b>：汇总今日剩余可领的估算价值，并拆成「可站内一键领取」和「需官方或授权后领取」。</li>
+        <li><b>本月已领到</b>：本月已经领到的累计估算。</li>
+        <li><b>我的卡册</b>：各平台的积分或额度。右上角标会显示可领取、已领取、去官方、需授权等状态。</li>
+        <li><b>薅羊毛</b>：限时或常设的官方活动、折扣、注册优惠和邀请奖励。卡片只展示已核验的官方来源，可按类型和地区筛选，并在本机标记「已领」或「不感兴趣」。信息可能变化，领取前请打开官方页确认。</li>
+        <li><b>卡片详情</b>：点开卡片后会在旁边弹出小浮窗，可看产品介绍、当前账户情况、积分明细，以及预估可用 Token 和折合价值。</li>
+        <li><b>一键签到</b>：只有已授权且今日可领的平台，才会在站内直接领取；其余会提示去官方领取，或需要先授权。</li>
+        <li><b>领取今日已授权项</b>：一次领取所有已授权且今日可领的卡片，不会对全平台自动签到。</li>
+      </ul>
+      <h3>使用方法</h3>
+      <ol>
+        <li>先看左侧「今天还能领」，了解今天还剩多少价值。</li>
+        <li>在右侧卡册浏览各平台，通过角标区分可领取、已领取、去官方或需授权。</li>
+        <li>点开任意卡片，阅读产品介绍，并查看账户、积分和预估价值。</li>
+        <li>若按钮是「一键签到」，点击即可完成。本页是演示，只会在浏览器里模拟，不会调用真实接口。</li>
+        <li>若按钮是「去官方领取」或「需授权后可一键领取」，按说明了解正式版会如何处理。</li>
+        <li>若要一次领完已授权项，点击左下角「领取今日已授权项」。</li>
+        <li>想恢复初始状态，点击顶栏「重置演示」。</li>
+      </ol>
+            <h3>扩展与官方余额</h3>
+      <ul>
+        <li>装上配套扩展并在选项页保存你自己的魔搭访问令牌后，魔搭卡片可以读取官方魔粒余额。</li>
+        <li>令牌只存在本机扩展里，不会进入本页面，也不会上传。</li>
+        <li>魔搭没有每日签到接口，卡片会显示「无每日签到」，不会假装领取成功。</li>
+        <li>官方按次数扣减魔粒，没有按 Token 或人民币的官方单价，因此显示「暂无官方价，不估值」。</li>
+      </ul>
+      <p class="guide-note">除已对接官方接口并成功读取的卡片外，本页数字和账户状态仍是演示数据，不能当作真实账户余额或收益。</p>
+    `;
+
+    function markGuideSeen() {
+      try { localStorage.setItem(GUIDE_KEY, "1"); } catch (e) {}
+    }
+    function showGuide() {
+      showModal({
+        title: "功能介绍与使用方法",
+        body: GUIDE_BODY,
+        variant: "guide",
+        actions: [{ label: "开始体验", kind: "primary", onClick: () => { markGuideSeen(); hideModal(); } }]
+      });
+    }
+
+    function showModal({ title, body, actions, variant }) {
+      const modal = document.getElementById("modal");
+      modal.classList.toggle("is-guide", variant === "guide");
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalBody").innerHTML = body;
+      const box = document.getElementById("modalActions");
+      box.innerHTML = "";
+      (actions || []).forEach((a) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = a.kind === "primary" ? "primary" : "secondary";
+        b.textContent = a.label;
+        b.addEventListener("click", a.onClick);
+        box.appendChild(b);
+      });
+      const root = document.getElementById("modalRoot");
+      root.classList.add("is-open");
+      root.setAttribute("aria-hidden", "false");
+    }
+    function hideModal() {
+      const root = document.getElementById("modalRoot");
+      root.classList.remove("is-open");
+      root.setAttribute("aria-hidden", "true");
+    }
+
+    function toast(text, type) {
+      const el = document.createElement("div");
+      el.className = "toast " + (type || "");
+      el.textContent = text;
+      const wrap = document.getElementById("toasts");
+      wrap.appendChild(el);
+      while (wrap.children.length > 4) wrap.firstElementChild.remove(); // 最多同时显示 4 条，防止连点刷屏
+      setTimeout(() => el.remove(), 2600);
+    }
+
+    function tickCountdown() {
+      const el = document.getElementById("countdown");
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Shanghai",
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }).formatToParts(now);
+      const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+      let h = 23 - parseInt(map.hour, 10);
+      let m = 59 - parseInt(map.minute, 10);
+      let s = 60 - parseInt(map.second, 10);
+      if (s === 60) { s = 0; m += 1; }
+      if (m === 60) { m = 0; h += 1; }
+      if (h < 0) { h = 0; m = 0; s = 0; }
+      const pad = (n) => String(n).padStart(2, "0");
+      el.textContent = "还有 " + pad(h) + ":" + pad(m) + ":" + pad(s);
+      const total = h * 3600 + m * 60 + s;
+      el.classList.toggle("soon", total < 3600);
+    }
+
+    function resetDemo() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      try { localStorage.removeItem(DEAL_STORAGE_KEY); } catch (e) {}
+      dealMarks = { claimed: {}, skipped: {} };
+      lastBanner = null;
+      activeId = null;
+      epoch++;
+      busyIds.clear();
+      batchRunning = false;
+      // force defaults even if URL has no fresh
+      cards = DEFAULT_CARDS.map((c) => ({ ...c }));
+      fixtureMode = new URLSearchParams(location.search).get("fixture") === "modelscope";
+      if (fixtureMode) applyModelscopeFixture();
+      else applyModelscopeShell();
+      updateExtChip();
+      closeDrawer();
+      hideModal();
+      renderSummary();
+      renderGrid();
+      renderDealGrid();
+      toast("演示已重置", "ok");
+    }
+
+    document.getElementById("grid").addEventListener("click", (e) => {
+      const card = e.target.closest("[data-id]");
+      if (card) openDrawer(card.getAttribute("data-id"), card);
+    });
+    document.getElementById("dealGrid").addEventListener("click", (e) => {
+      const card = e.target.closest("[data-deal-id]");
+      if (card) openDealDrawer(card.getAttribute("data-deal-id"), card);
+    });
+    document.getElementById("dealTypeChips").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-deal-type]");
+      if (!btn) return;
+      dealFilterType = btn.getAttribute("data-deal-type");
+      renderDealFilters();
+      renderDealGrid();
+    });
+    document.getElementById("dealRegionChips").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-deal-region]");
+      if (!btn) return;
+      dealFilterRegion = btn.getAttribute("data-deal-region");
+      renderDealFilters();
+      renderDealGrid();
+    });
+    document.getElementById("hideEnded").addEventListener("change", (e) => {
+      hideEndedDeals = !!e.target.checked;
+      renderDealGrid();
+    });
+    document.getElementById("overlay").addEventListener("click", (e) => {
+      if (e.target.id === "overlay") closeDrawer();
+    });
+    const repositionPopover = () => {
+      if (document.getElementById("overlay").classList.contains("is-open")) placePopover();
+    };
+    window.addEventListener("resize", repositionPopover);
+    document.getElementById("grid").addEventListener("scroll", repositionPopover, { passive: true });
+    document.getElementById("dealGrid").addEventListener("scroll", repositionPopover, { passive: true });
+    document.getElementById("modalRoot").addEventListener("click", (e) => {
+      if (e.target.id === "modalRoot") hideModal();
+    });
+    document.getElementById("batchBtn").addEventListener("click", openBatchModal);
+    document.getElementById("helpBtn").addEventListener("click", showGuide);
+    document.getElementById("resetBtn").addEventListener("click", resetDemo);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if (document.getElementById("modalRoot").classList.contains("is-open")) hideModal();
+        else if (document.getElementById("overlay").classList.contains("is-open")) closeDrawer();
+      }
+    });
+
+    loadState();
+    const params = new URLSearchParams(location.search);
+    fixtureMode = params.get("fixture") === "modelscope";
+    if (fixtureMode) applyModelscopeFixture();
+    else applyModelscopeShell();
+    updateExtChip();
+    renderSummary();
+    renderGrid();
+    renderDealFilters();
+    loadDeals();
+    tickCountdown();
+    setInterval(tickCountdown, 1000);
+
+    window.addEventListener("message", (e) => {
+      if (e.source !== window || !e.data || e.data.source !== EXT_SOURCE || e.data.type !== "ready") return;
+      connectExtension().then(() => {
+        if (fixtureMode) applyModelscopeFixture();
+        else applyModelscopeShell();
+        updateExtChip();
+        renderSummary();
+        renderGrid();
+        if (activeId === "modelscope") {
+          const card = cards.find((c) => c.id === "modelscope");
+          if (card) renderDrawer(card);
+        }
+      });
+    });
+    window.addEventListener("focus", () => {
+      if (!extState.connected) return;
+      connectExtension().then(() => {
+        applyModelscopeShell();
+        updateExtChip();
+        renderSummary();
+        renderGrid();
+        if (activeId === "modelscope") {
+          const card = cards.find((c) => c.id === "modelscope");
+          if (card) renderDrawer(card);
+        }
+      });
+    });
+    connectExtension().then(() => {
+      if (fixtureMode) applyModelscopeFixture();
+      else applyModelscopeShell();
+      updateExtChip();
+      renderSummary();
+      renderGrid();
+    });
+    loadRatesFallback();
+
+    // Deep-link helpers: ?open=modelscope  ?guide=1  ?guide=0  ?fixture=modelscope
+    const openParam = params.get("open");
+    const guideParam = params.get("guide");
+    if (openParam && !openParam.startsWith("deal:")) {
+      const found = cards.find((c) => c.id === openParam);
+      if (found) openDrawer(found.id);
+    }
+    const seenGuide = (() => { try { return localStorage.getItem(GUIDE_KEY) === "1"; } catch (e) { return false; } })();
+    if (guideParam === "1" || (guideParam !== "0" && !openParam && !seenGuide)) {
+      showGuide();
+    }
+  </script>
+</body>
+</html>

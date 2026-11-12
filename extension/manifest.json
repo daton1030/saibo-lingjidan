@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "赛博领鸡蛋",
+  "version": "0.1.0",
+  "description": "在本机读取已授权平台的官方余额，并与赛博领鸡蛋看板通信。访问令牌只保存在本机，不会上传。",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://modelscope.cn/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "赛博领鸡蛋",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
