@@ -1,7 +1,15 @@
+import { CLAIM_REVIEWS } from "./vendor/adapters/claim-catalog.js";
+import { PAGE_ORIGIN_ALLOWLIST } from "./vendor/scheduler/official-page.js";
+import { formatLastRun } from "./vendor/scheduler/shell.js";
+
 const PLATFORM = "modelscope";
 const statusEl = document.getElementById("status");
 const pill = document.getElementById("keyStatus");
 const input = document.getElementById("tokenInput");
+const claimStatusEl = document.getElementById("claimStatus");
+const claimPill = document.getElementById("claimPill");
+const reviewList = document.getElementById("reviewList");
+const dailyBtn = document.getElementById("dailyBtn");
 
 function setStatus(text, kind) {
   statusEl.textContent = text;
@@ -78,8 +86,94 @@ document.getElementById("testBtn").addEventListener("click", async () => {
   }
 });
 
+function setClaimStatus(text, kind) {
+  claimStatusEl.textContent = text;
+  claimStatusEl.className = "status" + (kind ? " " + kind : "");
+}
+
+function renderReviews() {
+  reviewList.innerHTML = "";
+  for (const review of CLAIM_REVIEWS) {
+    const li = document.createElement("li");
+    const label = review.balanceOnly
+      ? "不进入领取队列，只刷新余额"
+      : "暂不支持";
+    li.textContent = review.name + "：" + label + "。" + review.rejectReason;
+    reviewList.appendChild(li);
+  }
+}
+
+function applyClaimState(state) {
+  const on = Boolean(state && state.consented);
+  claimPill.textContent = on ? "已授权本机执行" : "未授权";
+  claimPill.classList.toggle("is-on", on);
+  dailyBtn.textContent = state && state.dailyEnabled ? "关闭每日自动领取" : "开启每日自动领取";
+  setClaimStatus(formatLastRun(state && state.lastRun, { demoMode: false }), "");
+}
+
+async function refreshClaim() {
+  const state = await send("options.claimStatus", {});
+  applyClaimState(state);
+}
+
+document.getElementById("authorizeBtn").addEventListener("click", async () => {
+  try {
+    let grantedOrigins = [];
+    if (PAGE_ORIGIN_ALLOWLIST.length && chrome.permissions && chrome.permissions.request) {
+      const origins = PAGE_ORIGIN_ALLOWLIST.map((origin) => origin.replace(/\/$/, "") + "/*");
+      const granted = await chrome.permissions.request({ origins });
+      if (!granted) {
+        setClaimStatus("未授予官网页权限。未执行领取。", "err");
+        return;
+      }
+      grantedOrigins = PAGE_ORIGIN_ALLOWLIST.slice();
+    }
+    const state = await send("options.authorizeAutoClaim", { grantedOrigins });
+    applyClaimState(state);
+    setClaimStatus(state.message || "已授权。", "ok");
+  } catch (err) {
+    setClaimStatus(err.message || "授权失败", "err");
+  }
+});
+
+document.getElementById("revokeBtn").addEventListener("click", async () => {
+  try {
+    const state = await send("options.revokeAutoClaim", {});
+    applyClaimState(state);
+    setClaimStatus(state.message || "已取消授权。", "ok");
+  } catch (err) {
+    setClaimStatus(err.message || "取消失败", "err");
+  }
+});
+
+document.getElementById("runOnceBtn").addEventListener("click", async () => {
+  setClaimStatus("正在执行…");
+  try {
+    const state = await send("options.runClaimOnce", {});
+    applyClaimState(state);
+    setClaimStatus((state.message || "已执行。") + formatLastRun(state.lastRun, { demoMode: false }), state.claimed ? "ok" : "");
+  } catch (err) {
+    setClaimStatus(err.message || "执行失败", "err");
+  }
+});
+
+dailyBtn.addEventListener("click", async () => {
+  try {
+    const current = await send("options.claimStatus", {});
+    const state = await send("options.setDailyClaim", { enabled: !current.dailyEnabled });
+    applyClaimState(state);
+    setClaimStatus(state.message || "已更新定时。", state.ok === false ? "err" : "ok");
+  } catch (err) {
+    setClaimStatus(err.message || "无法更新定时", "err");
+  }
+});
+
+renderReviews();
+
 if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
   setStatus("请在 Chrome 中通过「扩展选项」打开本页，才能把令牌保存到本机。当前是静态预览。", "");
+  setClaimStatus("当前是静态预览。请在扩展选项页里授权、执行或开启定时。令牌不会出现在本页。", "");
 } else {
   refreshStatus().catch((err) => setStatus(err.message || "无法读取保存状态", "err"));
+  refreshClaim().catch((err) => setClaimStatus(err.message || "无法读取自动领取状态", "err"));
 }

@@ -44,6 +44,26 @@
       <p class="status" id="status" role="status"></p>
     </section>
 
+    <section class="card" id="claimCard">
+      <div class="card-head">
+        <h2>官方授权自动领取</h2>
+        <span class="pill" id="claimPill">未授权</span>
+      </div>
+      <p class="lead">
+        授权之后，可以在本机立即执行一次，或按北京时间自然日自动执行。
+        每个平台仍要在它自己的官网登录。扩展不会收集 Cookie 或密码，令牌也不会回显。
+        当前没有已核验的官网页领取按钮，执行结果不会写成领取成功。魔搭只刷新官方余额。
+      </p>
+      <div class="actions">
+        <button type="button" class="primary" id="authorizeBtn">授权自动领取</button>
+        <button type="button" class="secondary" id="revokeBtn">取消授权</button>
+        <button type="button" class="secondary" id="runOnceBtn">立即执行一次</button>
+        <button type="button" class="secondary" id="dailyBtn">开启每日自动领取</button>
+      </div>
+      <p class="status" id="claimStatus" role="status">最近一次结果：尚未执行</p>
+      <ul id="reviewList"></ul>
+    </section>
+
     <section class="card muted">
       <h2>文档与范围</h2>
       <ul>

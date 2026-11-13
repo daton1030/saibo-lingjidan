@@ -170,7 +170,8 @@
       flex-direction: column;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
       position: relative;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
     .summary::before {
       content: "";
@@ -270,6 +271,9 @@
       color: var(--text-3);
       text-align: center;
     }
+    .claim-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .claim-actions .primary, .claim-actions .secondary { width: 100%; height: 32px; font-size: 12px; }
+    .claim-last { margin-top: 8px; font-size: 11px; line-height: 1.5; color: var(--text-2); word-break: break-word; }
 
     /* Album */
     .album {
@@ -856,6 +860,18 @@
           <p class="sum-hint">按北京时间每日 00:00 计算（倒计时仅供参考）</p>
         </div>
 
+        <div class="sum-block" id="autoClaimBox">
+          <div class="sum-label">本机自动领取</div>
+          <p class="sum-hint" id="autoClaimHint">公开页不能自动领取。仅在 localhost 且已安装扩展时，才可以授权、立即执行或开启每日定时。</p>
+          <div class="claim-actions">
+            <button class="secondary" id="authorizeClaimBtn" type="button" disabled>授权自动领取</button>
+            <button class="secondary" id="revokeClaimBtn" type="button" disabled>取消授权</button>
+            <button class="primary" id="runOnceBtn" type="button" disabled>立即执行一次</button>
+            <button class="secondary" id="dailyClaimBtn" type="button" disabled>开启每日自动领取</button>
+          </div>
+          <p class="claim-last" id="lastClaimResult">最近一次结果：尚未执行</p>
+        </div>
+
         <button class="batch-btn" id="batchBtn" type="button" disabled>暂无已接入的真实领取项</button>
         <p class="batch-note" id="batchNote">公开模式不会模拟批量领取成功。请在卡册打开已核实的官方入口。</p>
       </aside>
@@ -903,6 +919,7 @@
 
   <div class="toast-wrap" id="toasts"></div>
 
+  <script type="module" src="claim-bridge.js"></script>
   <script>
     const DEMO_MONTH_BASE = 45; // 仅 ?demo=1 使用的演示基数，公开模式不得计入「本月已领到」
     const STORAGE_KEY = "saibo-lingjidan-demo-v2";
@@ -1014,6 +1031,7 @@
     const UNREAD_LABEL = "尚未读取";
     const NO_OFFICIAL_PRICE = "暂无官方价，不估值";
     let extState = { connected: false, version: null, keys: {} };
+    let claimState = null;
     let rateTable = null;
     let fixtureMode = false;
     let demoMode = false;
@@ -1098,11 +1116,13 @@
     async function connectExtension() {
       try {
         const result = await callExtension("ping", {}, 1500);
-        extState = { connected: true, version: result.version, keys: result.keys || {} };
+        extState = { connected: true, version: result.version, keys: result.keys || {}, claim: result.claim || null };
+        claimState = result.claim || null;
         try { rateTable = await callExtension("getRates"); } catch (e) { /* ignore */ }
         return true;
       } catch (e) {
         extState = { connected: false, version: null, keys: {} };
+        claimState = null;
         return false;
       }
     }
@@ -1110,6 +1130,7 @@
     function maybeConnectExtension() {
       if (!localHostPage) {
         extState = { connected: false, version: null, keys: {} };
+        claimState = null;
         return Promise.resolve(false);
       }
       return connectExtension();
@@ -1842,7 +1863,64 @@
       return "魔搭 " + card.quotaText + "（暂无官方价，不估值；" + src + "）";
     }
 
+    function realClaimAvailable() {
+      return localHostPage && extState.connected;
+    }
+
+    function claimResultText() {
+      const run = claimState && claimState.lastRun;
+      if (window.saiboClaim && typeof window.saiboClaim.formatLastRun === "function") {
+        return window.saiboClaim.formatLastRun(run, { demoMode: false });
+      }
+      if (!run) return "最近一次结果：尚未执行";
+      if (run.blockedDemo || run.simulated) return "最近一次结果：公开模式不展示模拟领取成功";
+      return "最近一次结果：" + (run.claimMessage || "暂不支持") + "未记为领取成功。";
+    }
+
+    function renderClaimPanel() {
+      const hint = document.getElementById("autoClaimHint");
+      const last = document.getElementById("lastClaimResult");
+      const authorizeBtn = document.getElementById("authorizeClaimBtn");
+      const revokeBtn = document.getElementById("revokeClaimBtn");
+      const runBtn = document.getElementById("runOnceBtn");
+      const dailyBtn = document.getElementById("dailyClaimBtn");
+      const available = realClaimAvailable();
+      [authorizeBtn, revokeBtn, runBtn, dailyBtn].forEach((btn) => {
+        if (btn) btn.disabled = !available;
+      });
+      if (dailyBtn) dailyBtn.textContent = claimState && claimState.dailyEnabled ? "关闭每日自动领取" : "开启每日自动领取";
+      if (hint) {
+        if (!localHostPage) {
+          hint.textContent = "公开页不能自动领取。这里只跳转已核实的官方入口，不会在测试站执行领取。";
+        } else if (!extState.connected) {
+          hint.textContent = "本机页面已打开，但扩展未连接。安装扩展后才能授权、立即执行或开启每日自动领取。不会改用模拟领取。";
+        } else {
+          hint.textContent = "扩展已连接。授权后可立即执行一次，或按北京时间自然日自动执行。当前没有可自动点击的官方领取动作；魔搭只刷新余额，不记为领取成功。";
+        }
+      }
+      if (last) last.textContent = claimResultText();
+    }
+
+    window.saiboRefreshClaimPanel = renderClaimPanel;
+
+    async function mutateClaim(type, payload) {
+      if (!realClaimAvailable()) {
+        toast(localHostPage ? "请先安装扩展。公开模式和未连接扩展时都不会模拟领取成功。" : "公开页不能自动领取。", "err");
+        return;
+      }
+      const result = await callExtension(type, payload || {}, 20000);
+      claimState = result;
+      renderClaimPanel();
+      if (activeId === "modelscope") {
+        const card = cards.find((c) => c.id === "modelscope");
+        if (card) renderDrawer(card);
+      }
+      const text = result && result.message ? result.message : claimResultText();
+      toast(text, result && result.ok === false ? "err" : "ok");
+    }
+
     function renderSummary() {
+      renderClaimPanel();
       const todayEl = document.getElementById("todayAmount");
       const todayHint = document.getElementById("todayHint");
       const monthEl = document.getElementById("monthAmount");
@@ -2123,6 +2201,12 @@
           html += `<button class="secondary" type="button" data-act="connectHelp">如何连接扩展</button>`;
         }
         html += officialButton(card, "打开官方魔粒页");
+        html += `<p class="est-note" style="text-align:center;margin:0">不进入领取队列。本机开启每日定时后，只刷新官方余额。</p>`;
+        const balance = claimState && claimState.lastRun && claimState.lastRun.balance;
+        if (balance) {
+          const amount = balance.points == null ? "尚未读取" : (balance.points + " " + (balance.unit || "魔粒"));
+          html += `<p class="est-note" style="text-align:center;margin:0">最近余额刷新：${escapeHtml(amount)}。不记为领取成功。</p>`;
+        }
         return html;
       }
       if (card.status === "intl") {
@@ -2530,7 +2614,8 @@
       <ul>
         <li>必须在本机打开 <code>http://localhost:8080/web/</code>，再加载未打包扩展，并在选项页保存你自己的魔搭访问令牌，才能读取官方魔粒余额。</li>
         <li>令牌只存在本机扩展里，不会进入本页面，也不会上传。</li>
-        <li>魔搭没有每日签到接口，卡片会显示「无每日签到」，不会假装领取成功。</li>
+        <li>魔搭没有每日签到接口，卡片会显示「无每日签到」，不会假装领取成功。开启本机每日定时后，也只刷新官方余额。</li>
+        <li><b>自动领取</b>：只在 localhost 且已安装扩展时可用。公开页和 Surge 测试站不能自动领。未授权或没有已核验的官方动作时，结果是「需重新登录」或「暂不支持」，不会写成领取成功。</li>
         <li>官方按次数扣减魔粒，没有按 Token 或人民币的官方单价，因此显示「暂无官方价，不估值」，不会把魔粒换算成人民币填进汇总。</li>
       </ul>
       <p class="guide-note">除已对接官方接口并成功读取的卡片外，本页数字和账户状态仍是演示数据，不能当作真实账户余额或收益。</p>
@@ -2690,6 +2775,19 @@
       if (e.target.id === "modalRoot") hideModal();
     });
     document.getElementById("batchBtn").addEventListener("click", openBatchModal);
+    document.getElementById("authorizeClaimBtn").addEventListener("click", () => {
+      mutateClaim("authorizeAutoClaim").catch((err) => toast(err.message || "授权失败", "err"));
+    });
+    document.getElementById("revokeClaimBtn").addEventListener("click", () => {
+      mutateClaim("revokeAutoClaim").catch((err) => toast(err.message || "取消授权失败", "err"));
+    });
+    document.getElementById("runOnceBtn").addEventListener("click", () => {
+      mutateClaim("runClaimOnce").catch((err) => toast(err.message || "执行失败", "err"));
+    });
+    document.getElementById("dailyClaimBtn").addEventListener("click", () => {
+      const enabled = !(claimState && claimState.dailyEnabled);
+      mutateClaim("setDailyClaim", { enabled }).catch((err) => toast(err.message || "无法更新定时", "err"));
+    });
     document.getElementById("helpBtn").addEventListener("click", showGuide);
     document.getElementById("resetBtn").addEventListener("click", resetDemo);
     document.addEventListener("keydown", (e) => {
