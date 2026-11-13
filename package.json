@@ -1,7 +1,7 @@
 {
   "name": "saibo-lingjidan",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "赛博领鸡蛋：开源看板与浏览器扩展原型。访问令牌只保存在用户本机。",
   "type": "module",
   "scripts": {

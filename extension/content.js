@@ -11,7 +11,15 @@ const ALLOWED = new Set([
   "productInfo",
   "getRates",
   "hasKey",
-  "openOptions"
+  "openOptions",
+  "claimStatus",
+  "authorizeAutoClaim",
+  "revokeAutoClaim",
+  "setDailyClaim",
+  "runClaimOnce",
+  "openOfficialLogin",
+  "confirmPlatformLogin",
+  "markPlatformRelogin"
 ]);
 
 function isOurDashboard() {
