@@ -91,15 +91,58 @@ function setClaimStatus(text, kind) {
   claimStatusEl.className = "status" + (kind ? " " + kind : "");
 }
 
-function renderReviews() {
+function renderReviews(state) {
   reviewList.innerHTML = "";
-  for (const review of CLAIM_REVIEWS) {
+  const rows = state && Array.isArray(state.platforms) ? state.platforms : [];
+  const shown = new Set();
+  for (const row of rows) {
+    shown.add(row.id);
     const li = document.createElement("li");
-    const label = review.balanceOnly
-      ? "不进入领取队列，只刷新余额"
-      : "暂不支持";
-    li.textContent = review.name + "：" + label + "。" + review.rejectReason;
+    li.style.margin = "12px 0";
+    if (row.balanceOnly) {
+      const balance = row.officialPoints == null
+        ? "余额尚未从官方读取"
+        : "官方余额 " + row.officialPoints + " " + (row.officialUnit || "") + "，有效期官方未返回";
+      li.textContent = row.name + "：不进入领取队列。" + balance;
+      reviewList.appendChild(li);
+      continue;
+    }
+    const stateText = row.needsRelogin ? "需重新登录" : row.confirmed ? "已授权" : "未授权";
+    const note = document.createElement("div");
+    note.textContent = row.name + "：" + stateText + "。余额：尚未从官方读取。有效期：官方未返回。" + (row.loginNote || "");
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "secondary";
+    open.textContent = "打开官网登录";
+    open.addEventListener("click", () => runPlatform("options.openOfficialLogin", row.id));
+    const confirm = document.createElement("button");
+    confirm.type = "button";
+    confirm.className = "secondary";
+    confirm.textContent = "我已在官网完成登录";
+    confirm.addEventListener("click", () => runPlatform("options.confirmPlatformLogin", row.id));
+    const relogin = document.createElement("button");
+    relogin.type = "button";
+    relogin.className = "ghost";
+    relogin.textContent = "重新登录";
+    relogin.addEventListener("click", () => runPlatform("options.markPlatformRelogin", row.id));
+    li.append(note, open, confirm, relogin);
     reviewList.appendChild(li);
+  }
+  for (const review of CLAIM_REVIEWS) {
+    if (shown.has(review.id)) continue;
+    const li = document.createElement("li");
+    li.textContent = review.name + "：暂不支持。" + review.rejectReason;
+    reviewList.appendChild(li);
+  }
+}
+
+async function runPlatform(type, platformId) {
+  try {
+    const state = await send(type, { platformId });
+    applyClaimState(state);
+    setClaimStatus(state.message || "已更新。", state.ok === false ? "err" : "ok");
+  } catch (err) {
+    setClaimStatus(err.message || "操作失败", "err");
   }
 }
 
@@ -108,6 +151,7 @@ function applyClaimState(state) {
   claimPill.textContent = on ? "已授权本机执行" : "未授权";
   claimPill.classList.toggle("is-on", on);
   dailyBtn.textContent = state && state.dailyEnabled ? "关闭每日自动领取" : "开启每日自动领取";
+  renderReviews(state);
   setClaimStatus(formatLastRun(state && state.lastRun, { demoMode: false }), "");
 }
 
@@ -117,23 +161,21 @@ async function refreshClaim() {
 }
 
 document.getElementById("authorizeBtn").addEventListener("click", async () => {
-  try {
-    let grantedOrigins = [];
-    if (PAGE_ORIGIN_ALLOWLIST.length && chrome.permissions && chrome.permissions.request) {
+  if (PAGE_ORIGIN_ALLOWLIST.length && chrome.permissions && chrome.permissions.request) {
+    try {
       const origins = PAGE_ORIGIN_ALLOWLIST.map((origin) => origin.replace(/\/$/, "") + "/*");
       const granted = await chrome.permissions.request({ origins });
       if (!granted) {
         setClaimStatus("未授予官网页权限。未执行领取。", "err");
         return;
       }
-      grantedOrigins = PAGE_ORIGIN_ALLOWLIST.slice();
+      await send("options.authorizeAutoClaim", { grantedOrigins: PAGE_ORIGIN_ALLOWLIST.slice() });
+    } catch (err) {
+      setClaimStatus(err.message || "授权失败", "err");
+      return;
     }
-    const state = await send("options.authorizeAutoClaim", { grantedOrigins });
-    applyClaimState(state);
-    setClaimStatus(state.message || "已授权。", "ok");
-  } catch (err) {
-    setClaimStatus(err.message || "授权失败", "err");
   }
+  setClaimStatus("请在下面选择具体平台，打开它自己的官网登录。本页没有统一扫码，也不会读取 Cookie。", "");
 });
 
 document.getElementById("revokeBtn").addEventListener("click", async () => {
@@ -168,7 +210,7 @@ dailyBtn.addEventListener("click", async () => {
   }
 });
 
-renderReviews();
+renderReviews(null);
 
 if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
   setStatus("请在 Chrome 中通过「扩展选项」打开本页，才能把令牌保存到本机。当前是静态预览。", "");

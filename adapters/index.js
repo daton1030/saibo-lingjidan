@@ -2,7 +2,7 @@ import { modelscopeAdapter } from "./modelscope.js";
 import { createMockAdapter } from "./mock.js";
 import { estimateValue, loadRateTable, getPlatformRate } from "./convert.js";
 import { UNREAD_LABEL, NO_OFFICIAL_PRICE, unreadBalance } from "./types.js";
-import { CLAIM_REVIEWS, platformsForSchedule, reviewById, VERIFICATION_DATE } from "./claim-catalog.js";
+import { CLAIM_REVIEWS, platformsForSchedule, reviewById, officialLoginTarget, VERIFICATION_DATE } from "./claim-catalog.js";
 
 const registry = new Map();
 registry.set("modelscope", modelscopeAdapter);
@@ -38,5 +38,6 @@ export {
   CLAIM_REVIEWS,
   platformsForSchedule,
   reviewById,
+  officialLoginTarget,
   VERIFICATION_DATE
 };

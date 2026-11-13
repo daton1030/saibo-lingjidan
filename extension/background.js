@@ -1,6 +1,7 @@
-import { getAdapter, estimateValue, loadRateTable, getPlatformRate, listAdapters, CLAIM_REVIEWS, platformsForSchedule } from "./vendor/adapters/index.js";
+import { getAdapter, estimateValue, loadRateTable, getPlatformRate, listAdapters, CLAIM_REVIEWS, platformsForSchedule, reviewById, officialLoginTarget } from "./vendor/adapters/index.js";
 import { readApiKey, writeApiKey, deleteApiKey, keyStatusMap, hasApiKey } from "./keys.js";
 import {
+  buildHonestQueue,
   decideDailyTick,
   executeOfficialDay,
   mergeDailyUpdate,
@@ -24,7 +25,10 @@ const PAGE_TYPES = new Set([
   "authorizeAutoClaim",
   "revokeAutoClaim",
   "setDailyClaim",
-  "runClaimOnce"
+  "runClaimOnce",
+  "openOfficialLogin",
+  "confirmPlatformLogin",
+  "markPlatformRelogin"
 ]);
 
 const OPTIONS_TYPES = new Set([
@@ -36,7 +40,10 @@ const OPTIONS_TYPES = new Set([
   "options.authorizeAutoClaim",
   "options.revokeAutoClaim",
   "options.setDailyClaim",
-  "options.runClaimOnce"
+  "options.runClaimOnce",
+  "options.openOfficialLogin",
+  "options.confirmPlatformLogin",
+  "options.markPlatformRelogin"
 ]);
 
 const CONSENT_KEY = "saibo.claim.consent";
@@ -45,6 +52,7 @@ const LAST_KEY = "saibo.claim.lastRun";
 const CLAIM_DAY_KEY = "saibo.claim.lastDay";
 const BALANCE_DAY_KEY = "saibo.claim.modelscopeBalanceDay";
 const DONE_KEY = "saibo.claim.doneDays";
+const AUTH_KEY = "saibo.claim.platformAuth";
 const ALARM_NAME = "saibo.daily.tick";
 
 const RATE_URL = chrome.runtime.getURL("vendor/rates/rates.json");
@@ -167,6 +175,9 @@ async function handle(message, sender) {
   if (type === "revokeAutoClaim") return revokeAutoClaim();
   if (type === "setDailyClaim") return setDailyClaim(payload.enabled === true);
   if (type === "runClaimOnce") return runClaimOnce("manual");
+  if (type === "openOfficialLogin") return openOfficialLogin(payload.platformId);
+  if (type === "confirmPlatformLogin") return confirmPlatformLogin(payload.platformId);
+  if (type === "markPlatformRelogin") return markPlatformRelogin(payload.platformId);
 
   throw new Error("不支持的消息类型");
 }
@@ -197,11 +208,42 @@ async function handleOptions(message) {
   if (message.type === "options.revokeAutoClaim") return revokeAutoClaim();
   if (message.type === "options.setDailyClaim") return setDailyClaim(payload.enabled === true);
   if (message.type === "options.runClaimOnce") return runClaimOnce("manual");
+  if (message.type === "options.openOfficialLogin") return openOfficialLogin(payload.platformId);
+  if (message.type === "options.confirmPlatformLogin") return confirmPlatformLogin(payload.platformId);
+  if (message.type === "options.markPlatformRelogin") return markPlatformRelogin(payload.platformId);
   throw new Error("不支持的选项消息");
 }
 
 async function readBag() {
-  return chrome.storage.local.get([CONSENT_KEY, DAILY_KEY, LAST_KEY, CLAIM_DAY_KEY, BALANCE_DAY_KEY, DONE_KEY]);
+  return chrome.storage.local.get([CONSENT_KEY, DAILY_KEY, LAST_KEY, CLAIM_DAY_KEY, BALANCE_DAY_KEY, DONE_KEY, AUTH_KEY]);
+}
+
+function readAuthMap(bag) {
+  const raw = bag && bag[AUTH_KEY];
+  return raw && typeof raw === "object" ? raw : {};
+}
+
+function platformRows(bag, last) {
+  const auth = readAuthMap(bag);
+  const balance = last && last.balance;
+  return CLAIM_REVIEWS.filter((review) => review.balanceOnly === true || officialLoginTarget(review)).map((review) => {
+    const row = auth[review.id] || {};
+    const confirmed = row.confirmed === true && row.needsRelogin !== true;
+    return {
+      id: review.id,
+      name: review.name,
+      balanceOnly: review.balanceOnly === true,
+      loginUrl: officialLoginTarget(review) ? officialLoginTarget(review).url : null,
+      loginNote: review.loginNote || "",
+      confirmed,
+      needsRelogin: row.needsRelogin === true,
+      claimSupported: review.executable === true && review.checkinSupported === true,
+      officialPoints: review.balanceOnly === true && balance && typeof balance.points === "number" ? balance.points : null,
+      officialUnit: review.balanceOnly === true && balance ? balance.unit || null : null,
+      officialExpiresAt: null,
+      rejectReason: review.rejectReason
+    };
+  });
 }
 
 async function publicClaimState() {
@@ -213,6 +255,7 @@ async function publicClaimState() {
     dailyEnabled: bag[DAILY_KEY] === true && consent,
     executableCount: platformsForSchedule(CLAIM_REVIEWS).filter((item) => item.checkinSupported).length,
     allowlistEmpty: PAGE_ORIGIN_ALLOWLIST.length === 0,
+    platforms: platformRows(bag, last),
     reviews: CLAIM_REVIEWS.map((review) => ({
       id: review.id,
       name: review.name,
@@ -247,10 +290,61 @@ async function authorizeAutoClaim(grantedOrigins) {
   };
 }
 
+async function openOfficialLogin(platformId) {
+  const target = officialLoginTarget(reviewById(platformId));
+  if (!target) {
+    return { ...(await publicClaimState()), ok: false, claimed: false, status: "unsupported", message: "暂不支持" };
+  }
+  await chrome.tabs.create({ url: target.url });
+  return {
+    ...(await publicClaimState()),
+    ok: true,
+    claimed: false,
+    opened: true,
+    url: target.url,
+    message: "已打开官网。请在该官网完成登录；若页面提供扫码，请使用官网自己的扫码。完成后回到看板，点「我已在官网完成登录」。"
+  };
+}
+
+async function confirmPlatformLogin(platformId) {
+  const review = reviewById(platformId);
+  if (!officialLoginTarget(review)) {
+    return { ...(await publicClaimState()), ok: false, claimed: false, status: "unsupported", message: "暂不支持" };
+  }
+  const bag = await readBag();
+  const map = { ...readAuthMap(bag) };
+  map[platformId] = { confirmed: true, needsRelogin: false, confirmedAt: new Date().toISOString() };
+  await chrome.storage.local.set({
+    [AUTH_KEY]: map,
+    [CONSENT_KEY]: { granted: true, grantedAt: new Date().toISOString(), pageOrigins: [] }
+  });
+  return {
+    ...(await publicClaimState()),
+    ok: true,
+    claimed: false,
+    status: "unsupported",
+    message: "已授权。该平台目前没有可自动点击的官方领取按钮，一键执行会显示暂不支持，不会记为领取成功。"
+  };
+}
+
+async function markPlatformRelogin(platformId) {
+  const target = officialLoginTarget(reviewById(platformId));
+  if (!target) {
+    return { ...(await publicClaimState()), ok: false, claimed: false, status: "unsupported", message: "暂不支持" };
+  }
+  const bag = await readBag();
+  const map = { ...readAuthMap(bag) };
+  map[platformId] = { confirmed: false, needsRelogin: true, confirmedAt: null };
+  await chrome.storage.local.set({ [AUTH_KEY]: map });
+  await chrome.tabs.create({ url: target.url });
+  return { ...(await publicClaimState()), ok: false, claimed: false, status: "needs_relogin", message: "需重新登录" };
+}
+
 async function revokeAutoClaim() {
   await chrome.storage.local.set({
     [CONSENT_KEY]: { granted: false, revokedAt: new Date().toISOString(), pageOrigins: [] },
-    [DAILY_KEY]: false
+    [DAILY_KEY]: false,
+    [AUTH_KEY]: {}
   });
   await chrome.alarms.clear(ALARM_NAME);
   if (PAGE_ORIGIN_ALLOWLIST.length) {
@@ -319,8 +413,8 @@ async function runClaimOnce(reason) {
       at: new Date().toISOString(),
       simulated: false,
       claimed: false,
-      claimMessage: "需重新登录",
-      results: [],
+      claimMessage: "",
+      results: buildHonestQueue(CLAIM_REVIEWS, readAuthMap(bag)),
       skipped: [],
       balance: null,
       reason
@@ -364,6 +458,10 @@ async function runClaimOnce(reason) {
     balanceRunner: refreshModelscopeBalance
   });
   update.reason = reason;
+  const honest = buildHonestQueue(CLAIM_REVIEWS, readAuthMap(bag));
+  const executed = new Map((update.results || []).map((item) => [item.id, item]));
+  update.results = honest.map((item) => executed.get(item.id) || item);
+  update.claimMessage = "";
   const merged = mergeDailyUpdate(bag[LAST_KEY], update, {
     ranClaims: decision.runClaims === true,
     refreshedBalance: decision.refreshBalance === true

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { checkin as modelscopeCheckin } from "../adapters/modelscope.js";
-import { CLAIM_REVIEWS, platformsForSchedule } from "../adapters/claim-catalog.js";
+import { CLAIM_REVIEWS, officialLoginTarget, platformsForSchedule } from "../adapters/claim-catalog.js";
+import { buildHonestQueue } from "../scheduler/shell.js";
 import { buildClickPlan, interpretPageSignals, PAGE_ORIGIN_ALLOWLIST } from "../scheduler/official-page.js";
 import {
   decideDailyTick,
@@ -203,6 +204,30 @@ test("page click without a verified success signal is not a claim", () => {
   const loggedOut = interpretPageSignals({ authorized: true, loggedOut: true, buttonFound: true, clicked: true, successTextSeen: true });
   assert.equal(loggedOut.claimed, false);
   assert.equal(loggedOut.message, "需重新登录");
+});
+
+test("confirmed official login still does not count as a claim", () => {
+  const workbuddy = CLAIM_REVIEWS.find((item) => item.id === "workbuddy-cn");
+  const intl = CLAIM_REVIEWS.find((item) => item.id === "workbuddy-intl");
+  assert.equal(officialLoginTarget(workbuddy).url, "https://www.workbuddy.cn/");
+  assert.equal(officialLoginTarget(intl).url, "https://www.workbuddy.ai/");
+  assert.equal(officialLoginTarget({ id: "x", loginUrl: "http://example.com" }), null);
+  const queue = buildHonestQueue(CLAIM_REVIEWS, {
+    "workbuddy-cn": { confirmed: true },
+    "workbuddy-intl": { needsRelogin: true, confirmed: false }
+  });
+  const cn = queue.find((item) => item.id === "workbuddy-cn");
+  const global = queue.find((item) => item.id === "workbuddy-intl");
+  const scope = queue.find((item) => item.id === "modelscope");
+  assert.equal(cn.claimed, false);
+  assert.equal(cn.status, "unsupported");
+  assert.equal(cn.message, "暂不支持");
+  assert.equal(global.claimed, false);
+  assert.equal(global.status, "needs_relogin");
+  assert.equal(global.message, "需重新登录");
+  assert.equal(scope.claimed, false);
+  assert.equal(scope.status, "unsupported");
+  assert.equal(queue.some((item) => item.claimed), false);
 });
 
 test("claim reviews keep a source, a Shanghai date, and no executable target", () => {

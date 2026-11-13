@@ -47,6 +47,13 @@ test("dashboard real actions stay off the simulated check-in path", () => {
   assert.match(page, /id="runOnceBtn"/);
   assert.match(page, /id="dailyClaimBtn"/);
   assert.match(page, /公开页不能自动领取/);
+  assert.match(page, /我已在官网完成登录/);
+  assert.match(page, /没有统一扫码页/);
+  const loginFn = read("extension/background.js");
+  const openLogin = loginFn.slice(loginFn.indexOf("async function openOfficialLogin"), loginFn.indexOf("async function confirmPlatformLogin"));
+  assert.equal(openLogin.includes("permissions"), false);
+  assert.equal(openLogin.includes("cookie"), false);
+  assert.equal(openLogin.includes("document.cookie"), false);
   assert.match(page, /mutateClaim\("runClaimOnce"\)/);
   assert.equal(page.includes("startCheckin(\"runClaimOnce\")"), false);
   const checkin = page.slice(page.indexOf("function startCheckin"), page.indexOf("function formatBalance"));

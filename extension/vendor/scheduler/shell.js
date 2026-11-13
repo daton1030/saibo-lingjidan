@@ -385,6 +385,66 @@ export function formatLastRun(run, opts = {}) {
   return parts.join("");
 }
 
+/**
+ * 已确认官网登录仍不等于领取成功。没有可执行按钮时返回「暂不支持」。
+ * @param {readonly object[]} reviews
+ * @param {Record<string, { confirmed?: boolean, needsRelogin?: boolean }>} [authById]
+ */
+export function buildHonestQueue(reviews, authById = {}) {
+  const results = [];
+  for (const review of reviews || []) {
+    if (!review || !review.id) continue;
+    if (!review.loginUrl && review.balanceOnly !== true) continue;
+    const auth = authById[review.id] || {};
+    if (review.balanceOnly === true) {
+      results.push({
+        id: review.id,
+        name: review.name,
+        ok: true,
+        status: "unsupported",
+        claimed: false,
+        simulated: false,
+        message: "暂不支持"
+      });
+      continue;
+    }
+    if (auth.needsRelogin === true || auth.confirmed !== true) {
+      results.push({
+        id: review.id,
+        name: review.name,
+        ok: false,
+        status: "needs_relogin",
+        claimed: false,
+        simulated: false,
+        message: "需重新登录"
+      });
+      continue;
+    }
+    if (review.executable !== true || review.checkinSupported !== true) {
+      results.push({
+        id: review.id,
+        name: review.name,
+        ok: true,
+        status: "unsupported",
+        claimed: false,
+        simulated: false,
+        message: "暂不支持"
+      });
+      continue;
+    }
+    results.push({
+      id: review.id,
+      name: review.name,
+      ok: true,
+      status: "ready",
+      claimed: false,
+      simulated: false,
+      message: "可在已打开的官网页面上执行"
+    });
+  }
+  return results;
+}
+
 function compactSkipped(skipped) {
   if (!Array.isArray(skipped)) return [];
   return skipped.map((item) => ({ id: item && item.id, reason: item && item.reason }));

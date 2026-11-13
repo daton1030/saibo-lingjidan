@@ -18,5 +18,19 @@
 | 讯飞星火 | 拒绝接入 | official_only | https://xinghuo.xfyun.cn/doc/ | 文档中心页面没有每日签到。讯飞文书的星火值签到是另一个产品，不挪到这张卡。 |
 | Kimi | 拒绝接入 | official_only | https://www.kimi.com/help/kimi-api/api-free-trial | 国内手机号新用户注册即赠送 15 元代金券，完成实名后发放，有效期 3 个月。一次性发放，不是每日签到。 |
 | Cloudflare Workers AI | 拒绝接入 | official_only | https://developers.cloudflare.com/workers-ai/platform/pricing/ | 定价按 Neurons，并有免费的每日额度。页面没有签到按钮或领取 API。 |
+| WorkBuddy 国内站 | 拒绝接入。可打开官网登录 | official_only | https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Setting | 登录后从头像菜单进「成长计划」，完成成长任务获取能量。积分文档没有签到 API。关注公众号的二维码是一次性任务，不是登录扫码。登录页用 https://www.workbuddy.cn/ 上官网自己的登录。 |
+| WorkBuddy 国际站 | 拒绝接入。可打开官网登录 | official_only | https://www.workbuddy.ai/docs/workbuddy/Subscription | 每日奖励要在客户端发起对话后由系统自动发放，网页对话不算，no manual claim。登录用 https://www.workbuddy.ai/ 官网自己的登录框。 |
+| OfficeAce | 拒绝接入。可打开官网登录 | official_only | https://www.huaweicloud.com/product/officeace.html | 页面写首次注册登录赠送 4000 积分，每日登录赠送 100 积分且当日有效。没有单独签到按钮。 |
+| ima | 拒绝接入。可打开官网登录 | official_only | https://ima.qq.com/ | 页面有登录和打开电脑版，没有签到或领取按钮。 |
+| AStudio | 拒绝接入。可打开官网登录 | official_only | https://agent.xfyun.cn/overview/ | 页面有登录 / 注册、新用户赠送 1,000 积分和训练营说明。没有每日签到按钮或公开领取 API。 |
+| Cline | 拒绝接入。可打开官网登录 | official_only | https://cline.bot/ | 官网有 Sign In。本次没有看到每日领取按钮。 |
+| fal | 拒绝接入 | official_only | https://fal.ai/pricing | 定价按计算量。没有每日签到。 |
+| Meeo | 拒绝接入 | official_only | https://meoo.com/ | 官网是 AI 建站介绍，没有签到或领取说明。 |
+| 华为云 CodeArts | 拒绝接入 | official_only | https://codearts.huaweicloud.com/portal/ | 门户正文几乎为空，没有可核对的领取按钮。 |
+| EdgeOne | 拒绝接入 | official_only | https://pages.edgeone.ai/ | 官网没有签到或领取积分按钮。 |
+| ElevenLabs | 拒绝接入 | official_only | https://elevenlabs.io/pricing | 定价页没有出现签到或领取按钮文案。 |
+| 火山方舟 | 拒绝接入 | official_only | https://docs.volcengine.com/docs/ark/free-inference-quota?lang=zh | 文档页没有签到按钮。已核实的新用户额度仍是自动发放。 |
 
-以上平台的看板入口仍只跳转仓库里已经核实过的官网地址。公开页和 Surge 测试站不能自动领取。
+授权只打开上表里写明的官网，让用户自己登录。扩展不读取 Cookie，不代填密码，也不制作统一扫码页。确认「我已在官网完成登录」之后，看板显示已授权；没有可点击的官方按钮时，一键执行仍是「暂不支持」。点「重新登录」会清掉该平台的已授权状态，并再次打开官网。
+
+公开页和 Surge 测试站不能自动领取。

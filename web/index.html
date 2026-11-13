@@ -1895,7 +1895,7 @@
         } else if (!extState.connected) {
           hint.textContent = "本机页面已打开，但扩展未连接。安装扩展后才能授权、立即执行或开启每日自动领取。不会改用模拟领取。";
         } else {
-          hint.textContent = "扩展已连接。授权后可立即执行一次，或按北京时间自然日自动执行。当前没有可自动点击的官方领取动作；魔搭只刷新余额，不记为领取成功。";
+          hint.textContent = "点「授权自动领取」后，到该平台官网登录并回来确认。官网若提供扫码，用官网自己的扫码。一键执行不会把未核验的平台记成领取成功。魔搭只刷新余额。";
         }
       }
       if (last) last.textContent = claimResultText();
@@ -1911,8 +1911,8 @@
       const result = await callExtension(type, payload || {}, 20000);
       claimState = result;
       renderClaimPanel();
-      if (activeId === "modelscope") {
-        const card = cards.find((c) => c.id === "modelscope");
+      if (activeId) {
+        const card = cards.find((c) => c.id === activeId);
         if (card) renderDrawer(card);
       }
       const text = result && result.message ? result.message : claimResultText();
@@ -2046,7 +2046,7 @@
       const est = estimateDisplay(card);
       const tokenLine = est.tokenLine;
 
-      const actions = actionButtons(card, opts.busy || busyIds.has(card.id));
+      const actions = actionButtons(card, opts.busy || busyIds.has(card.id)) + platformAuthActions(card);
 
       document.getElementById("drawer").innerHTML = `
         <div class="drawer-head">
@@ -2184,6 +2184,61 @@
       return `<button class="${kind}" type="button" data-act="official">${escapeHtml(label)}</button>`;
     }
 
+    function platformAuthActions(card) {
+      const rows = claimState && Array.isArray(claimState.platforms) ? claimState.platforms : [];
+      const row = rows.find((item) => item.id === card.id);
+      if (!row || row.balanceOnly || !realClaimAvailable()) return "";
+      const state = row.needsRelogin ? "需重新登录" : row.confirmed ? "已授权" : "未授权";
+      return `<p class="est-note" style="text-align:center;margin:0">${escapeHtml(state)}。余额：尚未从官方读取。有效期：官方未返回。</p>`
+        + `<p class="est-note" style="text-align:center;margin:0">${escapeHtml(row.loginNote || "请在该平台官网登录。")}</p>`
+        + `<button class="secondary" type="button" data-act="openLogin">打开官网登录</button>`
+        + `<button class="secondary" type="button" data-act="confirmLogin">我已在官网完成登录</button>`
+        + `<button class="ghost" type="button" data-act="relogin">重新登录</button>`;
+    }
+
+    function openPlatformAuthModal() {
+      if (!realClaimAvailable()) {
+        toast(localHostPage ? "请先安装扩展。公开页不能自动领取。" : "公开页不能自动领取。", "err");
+        return;
+      }
+      const rows = claimState && Array.isArray(claimState.platforms) ? claimState.platforms : [];
+      const blocks = rows.map((row) => {
+        if (row.balanceOnly) {
+          const balance = row.officialPoints == null
+            ? "余额：尚未从官方读取"
+            : ("官方余额：" + row.officialPoints + " " + (row.officialUnit || "") + "。有效期：官方未返回。");
+          return `<p style="margin-top:12px"><b>${escapeHtml(row.name)}</b> 不进入领取队列。${escapeHtml(balance)}</p>`;
+        }
+        const state = row.needsRelogin ? "需重新登录" : row.confirmed ? "已授权" : "未授权";
+        return `<div style="margin-top:12px"><b>${escapeHtml(row.name)}</b> ${escapeHtml(state)}。余额：尚未从官方读取。有效期：官方未返回。
+          <div class="est-note">${escapeHtml(row.loginNote || "")}</div>
+          <div class="mark-row" style="margin-top:6px">
+            <button class="secondary" type="button" data-auth="open" data-id="${escapeHtml(row.id)}">打开官网登录</button>
+            <button class="secondary" type="button" data-auth="confirm" data-id="${escapeHtml(row.id)}">我已在官网完成登录</button>
+            <button class="ghost" type="button" data-auth="relogin" data-id="${escapeHtml(row.id)}">重新登录</button>
+          </div>
+        </div>`;
+      }).join("");
+      showModal({
+        title: "在各平台官网登录",
+        body: `<p>每个平台请在它自己的官网登录。官网如果提供扫码，请用官网页面上的扫码。这里没有统一扫码页，也不读取 Cookie。确认登录后可以一键执行；没有官方领取按钮时结果是「暂不支持」，不会写成领取成功。</p>${blocks}`,
+        actions: [{ label: "关闭", kind: "primary", onClick: hideModal }]
+      });
+      document.getElementById("modalBody").onclick = async (event) => {
+        const btn = event.target.closest("[data-auth]");
+        if (!btn) return;
+        const id = btn.getAttribute("data-id");
+        const kind = btn.getAttribute("data-auth");
+        const type = kind === "confirm" ? "confirmPlatformLogin" : kind === "relogin" ? "markPlatformRelogin" : "openOfficialLogin";
+        try {
+          await mutateClaim(type, { platformId: id });
+          openPlatformAuthModal();
+        } catch (err) {
+          toast(err.message || "操作失败", "err");
+        }
+      };
+    }
+
     function actionButtons(card, busy) {
       if (card.id === "modelscope" || card.livePlatform) {
         let html = `<button class="primary is-idle" type="button" disabled>无每日签到</button>`;
@@ -2257,6 +2312,9 @@
         if (!btn) return;
         const act = btn.getAttribute("data-act");
         if (act === "checkin") startCheckin(card.id);
+        if (act === "openLogin") mutateClaim("openOfficialLogin", { platformId: card.id }).catch((err) => toast(err.message || "无法打开官网", "err"));
+        if (act === "confirmLogin") mutateClaim("confirmPlatformLogin", { platformId: card.id }).catch((err) => toast(err.message || "确认失败", "err"));
+        if (act === "relogin") mutateClaim("markPlatformRelogin", { platformId: card.id }).catch((err) => toast(err.message || "无法重新登录", "err"));
         if (act === "official") openOfficialEntry(card);
         if (act === "auth") openAuthModal(card);
         if (act === "readBalance") startReadBalance(card.id);
@@ -2776,7 +2834,7 @@
     });
     document.getElementById("batchBtn").addEventListener("click", openBatchModal);
     document.getElementById("authorizeClaimBtn").addEventListener("click", () => {
-      mutateClaim("authorizeAutoClaim").catch((err) => toast(err.message || "授权失败", "err"));
+      openPlatformAuthModal();
     });
     document.getElementById("revokeClaimBtn").addEventListener("click", () => {
       mutateClaim("revokeAutoClaim").catch((err) => toast(err.message || "取消授权失败", "err"));
@@ -2820,8 +2878,8 @@
         updateExtChip();
         renderSummary();
         renderGrid();
-        if (activeId === "modelscope") {
-          const card = cards.find((c) => c.id === "modelscope");
+        if (activeId) {
+          const card = cards.find((c) => c.id === activeId);
           if (card) renderDrawer(card);
         }
       });
@@ -2833,8 +2891,8 @@
         updateExtChip();
         renderSummary();
         renderGrid();
-        if (activeId === "modelscope") {
-          const card = cards.find((c) => c.id === "modelscope");
+        if (activeId) {
+          const card = cards.find((c) => c.id === activeId);
           if (card) renderDrawer(card);
         }
       });

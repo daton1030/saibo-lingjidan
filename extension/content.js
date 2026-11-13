@@ -16,7 +16,10 @@ const ALLOWED = new Set([
   "authorizeAutoClaim",
   "revokeAutoClaim",
   "setDailyClaim",
-  "runClaimOnce"
+  "runClaimOnce",
+  "openOfficialLogin",
+  "confirmPlatformLogin",
+  "markPlatformRelogin"
 ]);
 
 function isOurDashboard() {
