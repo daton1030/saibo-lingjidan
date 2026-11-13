@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 1,
-  "updatedAt": "2026-11-12",
+  "schemaVersion": 2,
+  "updatedAt": "2026-11-13",
   "timezone": "Asia/Shanghai",
-  "notes": "公开活动表。只收录已打开并核验过的官方页面上的活动、折扣、注册优惠、邀请奖励或免费额度。不得编造金额、日期或价格；不清楚时省略该字段或写「以官方页为准」。不要写入返利、邀请或联盟链接。状态不入库，由加载器按 endAt 计算。信息可能变化，领取前请以官方页为准。",
+  "notes": "公开活动表。只收录已打开并核验过的官方页面上的活动、折扣、注册优惠、邀请奖励或免费额度。不得编造金额、日期或价格；不清楚时省略该字段或写「以官方页为准」。不要写入返利、邀请或联盟链接。schemaVersion 2：领取频次、核验状态、档期状态分开放置。claimFrequency、claimAction 入库且必填；verificationStatus 可入库，待核验/已失效应尊重人工标注，入库为已核验时由加载器按 7 个 Asia/Shanghai 日历日（自 verifiedAt 起算，常量 VERIFICATION_STALE_DAYS）计算，满 7 天后变为需重新核验。availabilityStatus 由加载器计算，不入库：无截止日期不再默认「进行中」；长期免费且已核验时展示文案为「长期有效」，档期枚举仍为「截止时间未知」。已结束不等于自动已失效。本表于 2026-11-13 升级数据结构与状态规则，各条 verifiedAt 仍为当时打开官网核验的日期，并非重新核验。信息可能变化，领取前请以官方页为准。",
   "deals": [
     {
       "id": "siliconflow-signup",
@@ -16,7 +16,10 @@
       "endAt": null,
       "sourceUrl": "https://docs.siliconflow.com/cn/faqs/billing-rules",
       "officialEntryUrl": "https://cloud.siliconflow.cn/",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "一次性",
+      "verificationStatus": "已核验",
+      "claimAction": "去官方领取"
     },
     {
       "id": "siliconflow-ambassador",
@@ -30,7 +33,10 @@
       "endAt": "2026-12-31",
       "sourceUrl": "https://www.siliconflow.cn/developer-talk/od7wj9rr23p95uhihmhrombp",
       "officialEntryUrl": "https://cloud.siliconflow.cn/",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "限时活动",
+      "verificationStatus": "已核验",
+      "claimAction": "去官方领取"
     },
     {
       "id": "aliyun-bailian-newuser",
@@ -44,7 +50,10 @@
       "endAt": null,
       "sourceUrl": "https://help.aliyun.com/zh/model-studio/new-free-quota",
       "officialEntryUrl": "https://bailian.console.aliyun.com/",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "一次性",
+      "verificationStatus": "已核验",
+      "claimAction": "自动到账"
     },
     {
       "id": "kimi-api-trial",
@@ -58,7 +67,10 @@
       "endAt": null,
       "sourceUrl": "https://www.kimi.com/help/kimi-api/api-free-trial",
       "officialEntryUrl": "https://platform.kimi.com/",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "一次性",
+      "verificationStatus": "已核验",
+      "claimAction": "去官方领取"
     },
     {
       "id": "tencent-tokenhub-newuser",
@@ -72,7 +84,10 @@
       "endAt": "2026-12-31",
       "sourceUrl": "https://cloud.tencent.com/document/product/1823/130053",
       "officialEntryUrl": "https://cloud.tencent.com/product/tokenhub",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "一次性",
+      "verificationStatus": "已核验",
+      "claimAction": "去官方领取"
     },
     {
       "id": "baidu-qianfan-newuser",
@@ -86,7 +101,10 @@
       "endAt": null,
       "sourceUrl": "https://cloud.baidu.com/doc/qianfan/s/Imi2rpirg",
       "officialEntryUrl": "https://console.bce.baidu.com/qianfan/ais/console/onlineService",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "一次性",
+      "verificationStatus": "已核验",
+      "claimAction": "自动到账"
     },
     {
       "id": "volcengine-ark-newuser",
@@ -100,7 +118,10 @@
       "endAt": null,
       "sourceUrl": "https://docs.volcengine.com/docs/ark/free-inference-quota?lang=zh",
       "officialEntryUrl": "https://console.volcengine.com/ark",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "一次性",
+      "verificationStatus": "已核验",
+      "claimAction": "自动到账"
     },
     {
       "id": "gemini-api-free-tier",
@@ -114,7 +135,10 @@
       "endAt": null,
       "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
       "officialEntryUrl": "https://aistudio.google.com",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "长期免费",
+      "verificationStatus": "已核验",
+      "claimAction": "去官方领取"
     },
     {
       "id": "anthropic-batches-discount",
@@ -128,7 +152,10 @@
       "endAt": null,
       "sourceUrl": "https://platform.claude.com/docs/en/build-with-claude/batch-processing",
       "officialEntryUrl": "https://platform.claude.com",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "长期免费",
+      "verificationStatus": "已核验",
+      "claimAction": "去官方领取"
     },
     {
       "id": "deepseek-offpeak",
@@ -142,7 +169,10 @@
       "endAt": null,
       "sourceUrl": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
       "officialEntryUrl": "https://platform.deepseek.com",
-      "verifiedAt": "2026-11-12"
+      "verifiedAt": "2026-11-12",
+      "claimFrequency": "长期免费",
+      "verificationStatus": "已核验",
+      "claimAction": "自动到账"
     }
   ]
 }

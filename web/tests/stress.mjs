@@ -1,3 +1,4 @@
+// 注意：公开模式已取消模拟领取成功。「一键签到」路径只在 ?demo=1 的演示模式下有效。不要为迁就本脚本而把模拟签到带回公开模式。
 import puppeteer from 'puppeteer-core';
 import fs from 'fs';
 const BASE = process.argv[2] || 'http://localhost:8080/';

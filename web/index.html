@@ -745,6 +745,18 @@
     .badge-ending { background: var(--orange-dim); color: var(--orange); }
     .badge-ended { background: rgba(255,255,255,0.06); color: var(--text-3); }
     .badge-skipped { background: rgba(255,255,255,0.06); color: var(--text-3); }
+    .badge-pending, .badge-stale { background: var(--orange-dim); color: var(--orange); }
+    .badge-invalid { background: var(--red-dim); color: var(--red); }
+    .badge-unknown, .badge-notstarted, .badge-longterm { background: var(--blue-dim); color: var(--blue); }
+    .deal-group-title {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      font-weight: 650;
+      color: var(--text-2);
+      letter-spacing: 0.04em;
+      padding: 8px 4px 2px;
+    }
+    .deal-group-title:first-child { padding-top: 0; }
     .deal-note {
       flex: 0 0 auto;
       margin-top: 8px;
@@ -864,6 +876,9 @@
           <div class="deal-toolbar">
             <div class="deal-chips" id="dealTypeChips" role="tablist" aria-label="按类型筛选"></div>
             <div class="deal-chips" id="dealRegionChips" role="tablist" aria-label="按地区筛选"></div>
+            <div class="deal-chips" id="dealFreqChips" role="tablist" aria-label="按领取频次筛选"></div>
+            <div class="deal-chips" id="dealVerifChips" role="tablist" aria-label="按核验状态筛选"></div>
+            <div class="deal-chips" id="dealAvailChips" role="tablist" aria-label="按档期筛选"></div>
             <label class="deal-toggle"><input type="checkbox" id="hideEnded" checked /> 隐藏已结束</label>
             <a class="deal-contrib" id="dealContribute" href="../README.md#%E8%96%85%E7%BE%8A%E6%AF%9B" target="_blank" rel="noopener noreferrer">我知道一个羊毛</a>
           </div>
@@ -894,6 +909,9 @@
     const DEAL_STORAGE_KEY = "saibo-lingjidan-deals-v1";
     const DEAL_TYPE_FILTERS = ["全部", "活动", "折扣", "注册优惠", "邀请奖励", "免费额度"];
     const DEAL_REGION_FILTERS = ["全部", "国内", "国际"];
+    const DEAL_FREQ_FILTERS = ["全部", "每日", "每周", "每月", "一次性", "长期免费", "限时活动", "无需领取自动发放"];
+    const DEAL_VERIF_FILTERS = ["全部", "已核验", "待核验", "需重新核验", "已失效"];
+    const DEAL_AVAIL_FILTERS = ["全部", "未开始", "进行中", "即将结束", "已结束", "截止时间未知"];
     const DEAL_ICON_COLORS = {
       "硅基流动": ["#6c5ce7", "硅"],
       "阿里云百炼": ["#6a5af9", "百"],
@@ -909,6 +927,9 @@
     let dealItems = [];
     let dealFilterType = "全部";
     let dealFilterRegion = "全部";
+    let dealFilterFrequency = "全部";
+    let dealFilterVerification = "全部";
+    let dealFilterAvailability = "全部";
     let hideEndedDeals = true;
     let dealMarks = { claimed: {}, skipped: {} };
     let dealsLoaded = false;
@@ -1140,7 +1161,15 @@
             const table = api.loadDealTable(json);
             dealItems = table.deals;
           } else if (Array.isArray(json.deals)) {
-            dealItems = json.deals.map((d) => ({ ...d, status: d.endAt ? "进行中" : "进行中" }));
+            dealItems = json.deals.map((d) => {
+              const availabilityStatus = d.endAt ? (d.availabilityStatus || "进行中") : (d.availabilityStatus || "截止时间未知");
+              return {
+                ...d,
+                availabilityStatus,
+                status: availabilityStatus,
+                verificationStatus: d.verificationStatus || "待核验"
+              };
+            });
           } else {
             continue;
           }
@@ -1160,6 +1189,7 @@
 
     function loadDealMarks() {
       if (freshRequested()) {
+        clearFreshLocalState();
         dealMarks = { claimed: {}, skipped: {} };
         return;
       }
@@ -1203,9 +1233,21 @@
       }
     }
 
+    function dealFilterOptions(kind) {
+      if (dealApi && kind === "freq" && dealApi.DEAL_FREQUENCY_FILTERS) return dealApi.DEAL_FREQUENCY_FILTERS;
+      if (dealApi && kind === "verif" && dealApi.DEAL_VERIFICATION_FILTERS) return dealApi.DEAL_VERIFICATION_FILTERS;
+      if (dealApi && kind === "avail" && dealApi.DEAL_AVAILABILITY_FILTERS) return dealApi.DEAL_AVAILABILITY_FILTERS;
+      if (kind === "freq") return DEAL_FREQ_FILTERS;
+      if (kind === "verif") return DEAL_VERIF_FILTERS;
+      return DEAL_AVAIL_FILTERS;
+    }
+
     function renderDealFilters() {
       const typeBox = document.getElementById("dealTypeChips");
       const regionBox = document.getElementById("dealRegionChips");
+      const freqBox = document.getElementById("dealFreqChips");
+      const verifBox = document.getElementById("dealVerifChips");
+      const availBox = document.getElementById("dealAvailChips");
       if (!typeBox || !regionBox) return;
       typeBox.innerHTML = DEAL_TYPE_FILTERS.map((t) =>
         `<button type="button" class="deal-chip${dealFilterType === t ? " is-on" : ""}" data-deal-type="${t}">${t}</button>`
@@ -1213,13 +1255,46 @@
       regionBox.innerHTML = DEAL_REGION_FILTERS.map((t) =>
         `<button type="button" class="deal-chip${dealFilterRegion === t ? " is-on" : ""}" data-deal-region="${t}">${t}</button>`
       ).join("");
+      if (freqBox) {
+        freqBox.innerHTML = dealFilterOptions("freq").map((t) =>
+          `<button type="button" class="deal-chip${dealFilterFrequency === t ? " is-on" : ""}" data-deal-freq="${t}">${t}</button>`
+        ).join("");
+      }
+      if (verifBox) {
+        verifBox.innerHTML = dealFilterOptions("verif").map((t) =>
+          `<button type="button" class="deal-chip${dealFilterVerification === t ? " is-on" : ""}" data-deal-verif="${t}">${t}</button>`
+        ).join("");
+      }
+      if (availBox) {
+        availBox.innerHTML = dealFilterOptions("avail").map((t) =>
+          `<button type="button" class="deal-chip${dealFilterAvailability === t ? " is-on" : ""}" data-deal-avail="${t}">${t}</button>`
+        ).join("");
+      }
+    }
+
+    function dealAvailability(deal) {
+      return deal.availabilityStatus || deal.status || "";
     }
 
     function visibleDeals() {
+      const filters = {
+        type: dealFilterType,
+        region: dealFilterRegion,
+        claimFrequency: dealFilterFrequency,
+        verificationStatus: dealFilterVerification,
+        availabilityStatus: dealFilterAvailability,
+        hideEnded: hideEndedDeals
+      };
+      if (dealApi && typeof dealApi.filterDeals === "function") {
+        return dealApi.filterDeals(dealItems, filters);
+      }
       return dealItems.filter((d) => {
         if (dealFilterType !== "全部" && d.type !== dealFilterType) return false;
         if (dealFilterRegion !== "全部" && d.region !== dealFilterRegion) return false;
-        if (hideEndedDeals && d.status === "已结束") return false;
+        if (dealFilterFrequency !== "全部" && d.claimFrequency !== dealFilterFrequency) return false;
+        if (dealFilterVerification !== "全部" && d.verificationStatus !== dealFilterVerification) return false;
+        if (dealFilterAvailability !== "全部" && dealAvailability(d) !== dealFilterAvailability) return false;
+        if (hideEndedDeals && dealAvailability(d) === "已结束") return false;
         return true;
       });
     }
@@ -1233,14 +1308,43 @@
       const mark = dealMark(deal.id);
       if (mark === "claimed") return { cls: "claimed", text: "已领" };
       if (mark === "skipped") return { cls: "skipped", text: "已略过" };
-      if (deal.status === "即将结束") return { cls: "ending", text: "将结束" };
-      if (deal.status === "已结束") return { cls: "ended", text: "已结束" };
+      const ver = deal.verificationStatus || "";
+      if (ver === "待核验") return { cls: "pending", text: "待核验" };
+      if (ver === "需重新核验") return { cls: "stale", text: "需重核" };
+      if (ver === "已失效") return { cls: "invalid", text: "已失效" };
+      const avail = dealAvailability(deal);
+      if (avail === "即将结束") return { cls: "ending", text: "将结束" };
+      if (avail === "已结束") return { cls: "ended", text: "已结束" };
+      if (avail === "未开始") return { cls: "notstarted", text: "未开始" };
+      const label = dealAvailabilityLabel(deal);
+      if (label === "长期有效") return { cls: "longterm", text: "长期有效" };
+      if (avail === "截止时间未知") return { cls: "unknown", text: "截止未知" };
       return { cls: "ongoing", text: "进行中" };
     }
 
     function dealDeadlineText(deal) {
       if (dealApi && typeof dealApi.formatDeadline === "function") return dealApi.formatDeadline(deal);
-      return deal.endAt ? String(deal.endAt) : "截止时间未知";
+      return dealAvailabilityLabel(deal);
+    }
+
+    function dealAvailabilityLabel(deal) {
+      if (dealApi && typeof dealApi.formatAvailabilityLabel === "function") return dealApi.formatAvailabilityLabel(deal);
+      if (dealAvailability(deal) === "截止时间未知" && deal.claimFrequency === "长期免费" && deal.verificationStatus === "已核验") {
+        return "长期有效";
+      }
+      return dealAvailability(deal) || (deal.endAt ? String(deal.endAt) : "截止时间未知");
+    }
+
+    function dealClaimSpec(deal) {
+      if (dealApi && typeof dealApi.dealClaimButton === "function") return dealApi.dealClaimButton(deal);
+      const url = typeof deal.officialEntryUrl === "string" ? deal.officialEntryUrl.trim() : "";
+      if (deal.claimAction === "自动到账") {
+        return { kind: "auto", label: "自动到账", enabled: false, openOfficial: !!url, officialLabel: url ? "打开官网" : "", officialUrl: url, note: "需在官网登录后由官方发放，本站不会显示领取成功。" };
+      }
+      if (deal.claimAction === "去官方领取" && url) {
+        return { kind: "official", label: "去官方领取", enabled: true, openOfficial: true, officialLabel: "去官方领取", officialUrl: url, note: "将在新标签页打开已核实的官方入口。" };
+      }
+      return { kind: "unsupported", label: "暂不支持", enabled: false, openOfficial: false, officialLabel: "", officialUrl: "", note: "尚未提供可跳转的官方领取入口，本站不会假装可领。" };
     }
 
     function renderDealGrid() {
@@ -1251,29 +1355,40 @@
       if (meta) {
         const total = dealItems.length;
         const shown = list.length;
+        const confirmed = list.filter((d) => d.verificationStatus === "已核验").length;
         meta.textContent = dealsLoaded
-          ? (total ? `${shown} / ${total} 条 · 已核验官方来源` : "暂无活动")
+          ? (total ? `${shown} / ${total} 条 · ${confirmed} 条当前已核验` : "暂无活动")
           : "加载中…";
       }
       if (!list.length) {
         grid.innerHTML = `<p class="deal-note" style="margin:8px 4px">${dealsLoaded ? "没有符合筛选条件的活动。" : "正在加载活动…"}</p>`;
         return;
       }
-      grid.innerHTML = list.map((d) => {
+      const groups = (dealApi && typeof dealApi.groupDealsForHome === "function")
+        ? dealApi.groupDealsForHome(list)
+        : [{ id: "all", title: "", items: list }];
+      const cardsHtml = (items) => items.map((d) => {
         const badge = dealBadge(d);
         const mark = dealMark(d.id);
-        const st = mark === "claimed" ? "claimed" : mark === "skipped" ? "skipped" : (d.status === "已结束" ? "ended" : d.status === "即将结束" ? "ending" : "ongoing");
+        const avail = dealAvailability(d);
+        const st = mark === "claimed" ? "claimed" : mark === "skipped" ? "skipped" : (avail === "已结束" ? "ended" : avail === "即将结束" ? "ending" : "ongoing");
         const deadline = dealDeadlineText(d);
+        const freq = d.claimFrequency || "";
+        const ver = d.verificationStatus || "";
         return `<button type="button" class="card deal-card is-${st}${activeId === "deal:" + d.id ? " is-active" : ""}" data-deal-id="${escapeHtml(d.id)}" aria-label="${escapeHtml(d.vendor)}，${escapeHtml(d.title)}，${escapeHtml(badge.text)}">
           <span class="card-icon">${dealIcon(d.vendor)}</span>
           <span class="card-main">
             <div class="card-vendor">${escapeHtml(d.vendor)} · ${escapeHtml(d.type)} · ${escapeHtml(d.region)}</div>
             <div class="card-name">${escapeHtml(d.title)}</div>
-            <div class="card-quota">${escapeHtml(d.summary)}</div>
-            <div class="card-quota">${escapeHtml(deadline)}</div>
+            <div class="card-quota">${escapeHtml(freq)}${freq && ver ? " · " : ""}${escapeHtml(ver)} · ${escapeHtml(deadline)}</div>
+            <div class="card-quota">核验 ${escapeHtml(d.verifiedAt || "—")} · 官方来源已记录 · 点开看条件与入口</div>
           </span>
           <span class="badge badge-${badge.cls}">${badge.text}</span>
         </button>`;
+      }).join("");
+      grid.innerHTML = groups.map((g) => {
+        const title = g.title ? `<div class="deal-group-title">${escapeHtml(g.title)}</div>` : "";
+        return title + cardsHtml(g.items);
       }).join("");
     }
 
@@ -1385,10 +1500,26 @@
       const drawer = document.getElementById("drawer");
       const mark = dealMark(deal.id);
       const deadline = dealDeadlineText(deal);
+      const avail = dealAvailability(deal);
+      const availLabel = dealAvailabilityLabel(deal);
       const startText = deal.startAt ? String(deal.startAt) : "未公布";
       const endText = deal.endAt ? String(deal.endAt) : "截止时间未知";
       const claimedOn = mark === "claimed";
       const skippedOn = mark === "skipped";
+      const claim = dealClaimSpec(deal);
+      let actionHtml = "";
+      if (claim.kind === "official" && claim.enabled) {
+        actionHtml = `<button class="primary" type="button" data-act="dealOfficial">${escapeHtml(claim.label)}</button>`;
+      } else if (claim.kind === "auto") {
+        actionHtml = `<button class="primary is-idle" type="button" disabled>自动到账</button>`;
+        if (claim.openOfficial) {
+          actionHtml += `<button class="secondary" type="button" data-act="dealOfficial">${escapeHtml(claim.officialLabel || "打开官网")}</button>`;
+        }
+        actionHtml += `<p class="est-note" style="text-align:center;margin:0">${escapeHtml(claim.note)}</p>`;
+      } else {
+        actionHtml = `<button class="primary is-idle" type="button" disabled>${escapeHtml(claim.label || "暂不支持")}</button>`;
+        actionHtml += `<p class="est-note" style="text-align:center;margin:0">${escapeHtml(claim.note)}</p>`;
+      }
       drawer.innerHTML = `
         <div class="drawer-head">
           <span class="card-icon">${dealIcon(deal.vendor)}</span>
@@ -1413,19 +1544,23 @@
           <div class="block">
             <h3>活动信息</h3>
             <div class="facts">
-              <div class="fact"><span class="k">状态</span><span class="v">${escapeHtml(deal.status)}</span></div>
+              <div class="fact"><span class="k">领取频次</span><span class="v">${escapeHtml(deal.claimFrequency || "未标注")}</span></div>
+              <div class="fact"><span class="k">核验状态</span><span class="v">${escapeHtml(deal.verificationStatus || "未标注")}</span></div>
+              <div class="fact"><span class="k">档期状态</span><span class="v">${escapeHtml(avail)}${availLabel && availLabel !== avail ? "（" + escapeHtml(availLabel) + "）" : ""}</span></div>
+              <div class="fact"><span class="k">领取方式</span><span class="v">${escapeHtml(deal.claimAction || "未标注")}</span></div>
               <div class="fact"><span class="k">截止</span><span class="v">${escapeHtml(deadline)}<small>${escapeHtml(endText)}</small></span></div>
               <div class="fact"><span class="k">开始</span><span class="v">${escapeHtml(startText)}</span></div>
-              <div class="fact"><span class="k">核实于</span><span class="v">${escapeHtml(deal.verifiedAt)}</span></div>
+              <div class="fact"><span class="k">核验日期</span><span class="v">${escapeHtml(deal.verifiedAt || "—")}</span></div>
             </div>
           </div>
           <div class="block">
             <h3>官方来源</h3>
             <p class="intro"><a class="drawer-link" href="${escapeHtml(deal.sourceUrl)}" target="_blank" rel="noopener noreferrer">打开官方说明页</a></p>
           </div>
+          ${deal.officialEntryUrl ? `<div class="block"><h3>官方入口</h3><p class="intro"><a class="drawer-link" href="${escapeHtml(deal.officialEntryUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(deal.officialEntryUrl)}</a></p></div>` : ""}
         </div>
         <div class="drawer-foot" id="drawerFoot">
-          <button class="primary" type="button" data-act="dealOfficial">去官方领取</button>
+          ${actionHtml}
           <div class="mark-row">
             <button class="secondary${claimedOn ? " is-on" : ""}" type="button" data-act="dealClaimed">${claimedOn ? "取消已领" : "已领"}</button>
             <button class="ghost${skippedOn ? " is-on" : ""}" type="button" data-act="dealSkipped">${skippedOn ? "取消不感兴趣" : "不感兴趣"}</button>
@@ -1438,8 +1573,10 @@
         if (!btn) return;
         const act = btn.getAttribute("data-act");
         if (act === "dealOfficial") {
-          window.open(deal.officialEntryUrl, "_blank", "noopener,noreferrer");
-          toast("已打开官方领取页", "ok");
+          const spec = dealClaimSpec(deal);
+          if (!spec.openOfficial || !spec.officialUrl) return;
+          window.open(spec.officialUrl, "_blank", "noopener,noreferrer");
+          toast(spec.kind === "auto" ? "已打开官网，请在官方页面登录后由官方发放。本站未代为领取。" : "已打开官方领取页", "ok");
         }
         if (act === "dealClaimed") setDealMark(deal.id, "claimed");
         if (act === "dealSkipped") setDealMark(deal.id, "skipped");
@@ -1563,14 +1700,41 @@
       }
     }
 
+    function isFreshRequested(search) {
+      let s = String(search == null ? "" : search);
+      try {
+        if (/^https?:\/\//i.test(s)) s = new URL(s).search;
+      } catch (e) { /* use raw string */ }
+      const q = new URLSearchParams(s);
+      return q.has("fresh") && q.get("fresh") !== "0";
+    }
+
+    function applyFreshStorage(search, storage, keys) {
+      if (!isFreshRequested(search)) return { cleared: false, keys: [] };
+      const cleared = [];
+      for (const key of keys) {
+        try {
+          storage.removeItem(key);
+          cleared.push(key);
+        } catch (e) { /* ignore quota / private mode */ }
+      }
+      return { cleared: true, keys: cleared };
+    }
+
     function freshRequested() {
-      const q = new URLSearchParams(location.search);
-      return q.has("fresh");
+      return isFreshRequested(location.search);
+    }
+
+    function clearFreshLocalState() {
+      return applyFreshStorage(location.search, localStorage, [STORAGE_KEY, DEAL_STORAGE_KEY]);
     }
 
     function loadState() {
       cards = DEFAULT_CARDS.map((c) => ({ ...c }));
-      if (freshRequested()) return;
+      if (freshRequested()) {
+        clearFreshLocalState();
+        return;
+      }
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return;
@@ -2349,7 +2513,7 @@
         <li><b>今天还能领</b>：公开模式在没有已核实可领取金额时显示「—」，并分项列出真实账户、官方价估算和演示数据，不会把它们混加。演示模式才显示演示汇总，并标明「演示」。</li>
         <li><b>本月已领到</b>：只统计已核实的真实领取记录。目前尚无此类记录时显示「暂无」，不会用演示基数凑数。演示模式可显示演示汇总。</li>
         <li><b>我的卡册</b>：各平台的积分或额度。公开模式下，未接入真实领取的卡片会引导你走官方入口，角标不再写成可站内领取。</li>
-        <li><b>薅羊毛</b>：限时或常设的官方活动、折扣、注册优惠和邀请奖励。卡片只展示已核验的官方来源，可按类型和地区筛选，并在本机标记「已领」或「不感兴趣」。信息可能变化，领取前请打开官方页确认。</li>
+        <li><b>薅羊毛</b>：官方活动、折扣、注册优惠和免费额度。首页优先展示已核验的「即将结束」和「每日可领」；新用户一次性福利单独分组，不会算进「今天还能领」。每条会显示领取频次、核验状态、档期、核验日期、条件和官方来源。无截止日期不再视为「进行中」：长期免费且已核验显示「长期有效」，其他显示「截止时间未知」。超过 7 天未重新核验的条目会标为「需重新核验」，不再当作已确认福利排在前面。领取按钮按「自动到账 / 去官方领取 / 暂不支持」区分，本站不会假装站内领取成功。可按类型、地区、频次、核验状态和档期组合筛选，并在本机标记「已领」或「不感兴趣」。信息可能变化，领取前请打开官方页确认。</li>
         <li><b>卡片详情</b>：点开卡片后会在旁边弹出小浮窗，可看产品介绍、账户情况和积分明细。</li>
         <li><b>去官方领取 / 打开官网</b>：在新标签页打开该平台已核实的官方入口。尚未核实入口的平台不会假装跳转。</li>
         <li><b>模拟领取</b>：只在演示模式提供。公开模式的批量按钮会显示「暂无已接入的真实领取项」，不会假装批量成功。</li>
@@ -2485,6 +2649,27 @@
       const btn = e.target.closest("[data-deal-region]");
       if (!btn) return;
       dealFilterRegion = btn.getAttribute("data-deal-region");
+      renderDealFilters();
+      renderDealGrid();
+    });
+    document.getElementById("dealFreqChips").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-deal-freq]");
+      if (!btn) return;
+      dealFilterFrequency = btn.getAttribute("data-deal-freq");
+      renderDealFilters();
+      renderDealGrid();
+    });
+    document.getElementById("dealVerifChips").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-deal-verif]");
+      if (!btn) return;
+      dealFilterVerification = btn.getAttribute("data-deal-verif");
+      renderDealFilters();
+      renderDealGrid();
+    });
+    document.getElementById("dealAvailChips").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-deal-avail]");
+      if (!btn) return;
+      dealFilterAvailability = btn.getAttribute("data-deal-avail");
       renderDealFilters();
       renderDealGrid();
     });
