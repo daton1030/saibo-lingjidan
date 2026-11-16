@@ -44,6 +44,25 @@
       <p class="status" id="status" role="status"></p>
     </section>
 
+    <section class="card" id="claimCard">
+      <div class="card-head">
+        <h2>官方授权自动领取</h2>
+        <span class="pill" id="claimPill">未授权</span>
+      </div>
+      <p class="lead">
+        每个平台在它自己的官网登录。官网如果提供扫码，请用官网页面上的扫码。这里没有统一扫码页，也不读取 Cookie。
+        回到本页点「我已在官网完成登录」后，才算已授权。当前没有可自动点击的领取按钮，一键执行会显示暂不支持。魔搭只刷新余额。
+      </p>
+      <div class="actions">
+        <button type="button" class="primary" id="authorizeBtn">授权自动领取</button>
+        <button type="button" class="secondary" id="revokeBtn">取消授权</button>
+        <button type="button" class="secondary" id="runOnceBtn">立即执行一次</button>
+        <button type="button" class="secondary" id="dailyBtn">开启每日自动领取</button>
+      </div>
+      <p class="status" id="claimStatus" role="status">最近一次结果：尚未执行</p>
+      <ul id="reviewList"></ul>
+    </section>
+
     <section class="card muted">
       <h2>文档与范围</h2>
       <ul>

@@ -47,7 +47,7 @@
 /**
  * @typedef {Object} CheckinResult
  * @property {boolean} ok
- * @property {"claimed"|"already"|"unsupported"|"no_activity"|"failed"|"official_only"} status
+ * @property {"claimed"|"already"|"unsupported"|"no_activity"|"failed"|"official_only"|"needs_relogin"} status
  * @property {boolean} claimed
  * @property {string} message
  * @property {number|null} [pointsAwarded]
